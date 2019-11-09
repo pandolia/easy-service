@@ -2,7 +2,7 @@
 
 如果你的 Windows 程序需要在开机后用户登录之前就开始运行、且在用户注销之后也不停止，那么你需要将程序注册为一个系统服务。
 
-然而，在 Windows 下编写一个可注册为系统服务的程序并不是一件简单的事情。首先，程序必须编译为二进制的可执行程序，这就排除了脚本语言和虚拟机语言；其次，程序必须按系统服务的格式编写，编写过程繁琐，编写示例可见：[MS 官方文档](https://code.msdn.microsoft.com/windowsapps/CppWindowsService-cacf4948) 。
+然而，在 Windows 下编写一个可注册为系统服务的程序并不是一件简单的事情。首先，程序必须是二进制的可执行程序，这就排除了脚本语言和虚拟机语言；其次，程序必须按系统服务的格式编写，编写过程繁琐，编写示例可见：[MS 官方文档](https://code.msdn.microsoft.com/windowsapps/CppWindowsService-cacf4948) 。
 
 EasyService 是一个可以将常规程序注册为系统服务的工具。你可以按常规的方法编写程序，然后用 EasyService 注册为一个系统服务，这样你的程序就可以在开机后用户登录之前自动运行、且在用户注销之后也不会停止。
 
@@ -14,9 +14,7 @@ EasyService 需要 .NetFramework 4.0 （大部分 Windows 系统都已自带）�
 
 ### 使用方法
 
-（1） 下载 [源码及程序](https://github.com/pandolia/easy-service/archive/master.zip)，解压。
-
-（2） 编写、测试你的程序，EasyService 对程序仅有以下两点要求：
+（1） 编写、测试你的程序，EasyService 对程序仅有以下两点要求：
 
 ```
 a. 程序应持续运行
@@ -25,6 +23,8 @@ b. 当程序的标准输入接收到 “exit” 后应在 10 秒之内退出
 ```
 
 典型的程序见 worker/index.js （nodejs 版）， worker/main.py （python 版） 或 src/SampleWorker.cs （C# 版）。
+
+（2） 下载 [源码及程序](https://github.com/pandolia/easy-service/archive/master.zip)，解压。
 
 （3） 打开 svc.conf 文件，修改配置：
 
