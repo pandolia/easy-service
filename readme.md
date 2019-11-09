@@ -33,7 +33,7 @@ b. 当程序的标准输入接收到 “exit” 后应在 10 秒之内退出
 ServiceName: An Easy Service
 
 # 需要运行的可执行程序及命令行参数
-Worker: python main.py
+Worker: node index.js
 
 # 程序运行的工作目录
 WorkingDir: worker
