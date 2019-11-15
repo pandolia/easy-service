@@ -6,7 +6,7 @@
 
 [EasyService](https://github.com/pandolia/easy-service) 是一个可以将常规程序注册为系统服务的工具，体积只有 16KB 。你可以按常规的方法编写程序，然后用 EasyService 注册为一个系统服务，这样你的程序就可以在开机后用户登录之前自动运行、且在用户注销之后也不会停止。
 
-如果你需要在 Windows Server 下部署网站、API 等服务， EasyService 将是一个很有用的工具。
+如果你需要在 Windows Server 下部署网站、API 或其他需要长期在后台运行的服务， EasyService 将是一个很有用的工具。
 
 ### 系统要求
 
@@ -22,7 +22,7 @@ EasyService 需要 .NetFramework 4.0 （大部分 Windows 系统都已自带）�
 建议： 当程序的标准输入接收到 “exit” 后在 10 秒之内退出
 ```
 
-典型的程序见 worker/index.js （nodejs 版）， worker/main.py （python 版） 或 src/SampleWorker.cs （C# 版）。
+典型的程序见 [worker/index.js](https://github.com/pandolia/easy-service/blob/master/worker/index.js) （nodejs 版）， [worker/main.py](https://github.com/pandolia/easy-service/blob/master/worker/main.py) （python 版） 或 [src/SampleWorker.cs](https://github.com/pandolia/easy-service/blob/master/src/SampleWorker.cs) （C# 版）。
 
 （2） 下载 [源码及程序](https://github.com/pandolia/easy-service/archive/master.zip)，解压。
 
