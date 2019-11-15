@@ -6,7 +6,7 @@
 
 [EasyService](https://github.com/pandolia/easy-service) 是一个可以将常规程序注册为系统服务的工具，体积只有 16KB 。你可以按常规的方法编写程序，然后用 EasyService 注册为一个系统服务，这样你的程序就可以在开机后用户登录之前自动运行、且在用户注销之后也不会停止。
 
-如果你需要在 Windows Server 下部署网站、API 或其他需要长期在后台运行的服务， EasyService 将是一个很有用的工具。
+如果你需要在 Windows 系统下部署网站、API 或其他需要长期在后台运行的服务， EasyService 将是一个很有用的工具。
 
 ### 系统要求
 
