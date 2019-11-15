@@ -1,6 +1,5 @@
 /outfiles/*
 !/outfiles/lastline.log
-readme.eng.md
 svc.log
 /src/.vs
 /src/obj
