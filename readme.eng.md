@@ -31,23 +31,23 @@ Typical programs are: [worker/index.js](https://github.com/pandolia/easy-service
 (3) Open **svc.conf** , edit configurations:
 
 ```conf
-# service's name, DO NOT conflict with existing services
+# service's name, DO NOT conflict with existed services
 ServiceName: An Easy Service
 
 # program and command line arguments
 Worker: node index.js
 
-# working directory where you want to run the program, make sure this diretory exist
+# working directory where you want to run the program, make sure this diretory exists
 WorkingDir: worker
 
-# output of the program will be written to this directory, make sure this diretory exist
+# output of the program will be written to this directory, make sure this diretory exists
 OutFileDir: outfiles
 
 # output encoding of the program, leave empty if you are not sure
 WorkerEncoding: utf8
 ```
 
-(4) Open a terminatal with adminstration privilege in the directory which contains **svc.exe**:
+(4) Open a terminal with adminstration privilege in the directory which contains **svc.exe**:
 
 a. run ***svc check*** to check configurations
 
@@ -67,6 +67,6 @@ To register mutiple services, just create mutiple directories, copy **svc.exe** 
 
 ### Internal Implementation
 
-EasyService registers himself (**svc.exe**) as a system service. When this service starts, it reads configurations in **svc.conf** and creates a child process to run the program (the Worker), then monitors the child process and re-creates one if the process stops running. When this service stops, it writes data "exit" to the stdin of the child process and wait for it to exit, and terminates the child process if waitting time exceeds 10 seconds.
+Actually, EasyService registers himself (**svc.exe**) as a system service. When this service starts, he reads configurations in **svc.conf** and creates a child process to run the program (the Worker), then monitors the child process and re-creates one if it stops running. When this service stops, he writes data "exit" to the stdin of the child process and wait for it to exit, and terminates the child process if waitting time exceeds 10 seconds.
 
 Source code of EasyService are in [src/main.cs](https://github.com/pandolia/easy-service/blob/master/src/Main.cs) 。
