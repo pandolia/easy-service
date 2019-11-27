@@ -24,6 +24,8 @@ EasyService 需要 .NetFramework 4.0 （大部分 Windows 系统都已自带）�
 建议： 当程序的标准输入接收到 “exit” 后在 10 秒之内退出
 ```
 
+其中建议要求是非强制性的，程序不满足此要求也可以。
+
 典型的程序见 [worker/index.js](https://github.com/pandolia/easy-service/blob/master/worker/index.js) （nodejs 版）， [worker/main.py](https://github.com/pandolia/easy-service/blob/master/worker/main.py) （python 版） 或 [src/SampleWorker.cs](https://github.com/pandolia/easy-service/blob/master/src/SampleWorker.cs) （C# 版）。
 
 （2） 下载 [源码及程序](https://github.com/pandolia/easy-service/archive/master.zip)，解压。
