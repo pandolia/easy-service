@@ -154,6 +154,7 @@ partial class Program
     private static string domain = null;
     private static string user = null;
     private static string password = null;
+    private static string description = null;
 
     private static readonly int waitSeconds = 10;
     private static readonly int restartWaitSeconds = 5;
@@ -171,7 +172,8 @@ partial class Program
         { "setWorkerEncoding", setWorkerEncoding },
         { "setDomain", setDomain },
         { "setUser", setUser },
-        { "setPassword", setPassword }
+        { "setPassword", setPassword },
+        { "setDescription", setDescription }
     };
 
     private static string setServiceName(string value)
@@ -292,6 +294,12 @@ partial class Program
         return null;
     }
 
+    private static string setDescription(string value)
+    {
+        description = value;
+        return null;
+    }
+
     private static string readConfig()
     {
         var errs = ReadConfig(CONF_FILE, setterDict);
@@ -331,6 +339,7 @@ partial class Program
         Print($"WorkingDir: {workingDir}");
         Print($"OutFileDir: {outFileDir}");
         Print($"WorkerEncoding: {workerEncoding}");
+        Print($"Description: {description}");
         Print($"Domain: {domain}");
         Print($"User: {user}");
         Print($"Password: {password}");
@@ -390,6 +399,8 @@ partial class Program
                 _args = $"{_args} obj= \"{obj}\" password= \"{password}\"";
             }
             Exec("sc", _args);
+            var _argsDescription = $"description {name} {description}";
+            Exec("sc", _argsDescription);
             if ((sc = GetService(serviceName)) == null)
             {
                 Print($"Failed to install Service {name}");
