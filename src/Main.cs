@@ -155,6 +155,7 @@ partial class Program
     private static string user = null;
     private static string password = null;
     private static string description = null;
+    private static string displayName = null;
 
     private static readonly int waitSeconds = 10;
     private static readonly int restartWaitSeconds = 5;
@@ -173,24 +174,49 @@ partial class Program
         { "setDomain", setDomain },
         { "setUser", setUser },
         { "setPassword", setPassword },
-        { "setDescription", setDescription }
+        { "setDescription", setDescription },
+        { "setDisplayName", setDisplayName }
     };
+
+    private static string removeOuterQuote(string value)
+    {
+        if (value[0] == '"' || value[0] == '\'')
+        {
+            char quote = value[0];
+            var i = value.IndexOf(quote, 1);
+            if (i == value.Length - 1)
+            {
+                return value.Substring(1, value.Length - 2);
+            }
+        }
+        return value;
+    }
+
+    private static string checkValid(string value)
+    {
+        char[] invalidFileNameChars =  Path.GetInvalidFileNameChars();
+
+        foreach (char c in value)  
+        {
+            if (Array.IndexOf(invalidFileNameChars, c) >= 0)
+            {
+                return "contain invalid word ' \" | ~ # % & * { } \' : < > ? / + '";
+            }
+        }
+
+        return null;
+    }
 
     private static string setServiceName(string value)
     {
-        serviceName = value;
+        serviceName = removeOuterQuote(value.Trim());
 
         if (serviceName.Length == 0)
         {
             return "empty";
         }
 
-        if (serviceName.Contains("\""))
-        {
-            return "contains '\"'";
-        }
-
-        return null;
+        return checkValid(serviceName);
     }
 
     private static string setWorker(string value)
@@ -215,7 +241,7 @@ partial class Program
                 return "bad format";
             }
             arguments = worker.Substring(i + 1).TrimStart();
-            return null;
+            return checkValid(fileName);
         }
 
         var ii = worker.IndexOf(' ');
@@ -223,12 +249,12 @@ partial class Program
         {
             fileName = worker;
             arguments = "";
-            return null;
+            return checkValid(fileName);
         }
 
         fileName = worker.Substring(0, ii);
         arguments = worker.Substring(ii + 1).TrimStart();
-        return null;
+        return checkValid(fileName);
     }
 
     private static string setWorkingDir(string value)
@@ -296,8 +322,14 @@ partial class Program
 
     private static string setDescription(string value)
     {
-        description = value;
+        description = removeOuterQuote(value.Trim());
         return null;
+    }
+
+    private static string setDisplayName(string value)
+    {
+        displayName = removeOuterQuote(value.Trim());
+        return checkValid(displayName);
     }
 
     private static string readConfig()
@@ -340,6 +372,7 @@ partial class Program
         Print($"OutFileDir: {outFileDir}");
         Print($"WorkerEncoding: {workerEncoding}");
         Print($"Description: {description}");
+        Print($"DisplayName: {displayName}");
         Print($"Domain: {domain}");
         Print($"User: {user}");
         Print($"Password: {password}");
@@ -393,7 +426,7 @@ partial class Program
                 Print($"Service {name} is already installed!");
                 return 1;
             }
-            var _args = $"create {name} binPath= \"{BinPath}\" start= auto";
+            var _args = $"create {name} binPath= \"{BinPath}\" start= auto DisplayName= \"{displayName}\"";
             if (user.Length > 0)
             {
                 var obj = (domain.Length > 0) ? $"{domain}\\{user}" : user;
