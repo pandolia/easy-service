@@ -363,6 +363,7 @@ partial class Program
         }
 
         string name = $"\"{serviceName}\"";
+        string serviceDescription = $"\"{description}\"";
         var sc = GetService(serviceName);
         var status = (sc == null) ? "not installed" : sc.Status.ToString().ToLower();
         op = args.Length > 0 ? args[0] : op;
@@ -399,7 +400,7 @@ partial class Program
                 _args = $"{_args} obj= \"{obj}\" password= \"{password}\"";
             }
             Exec("sc", _args);
-            var _argsDescription = $"description {name} {description}";
+            var _argsDescription = $"description {name} {serviceDescription}";
             Exec("sc", _argsDescription);
             if ((sc = GetService(serviceName)) == null)
             {
