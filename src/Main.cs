@@ -323,7 +323,7 @@ partial class Program
     private static string setDescription(string value)
     {
         description = removeOuterQuote(value.Trim());
-        return null;
+        return checkValid(description);
     }
 
     private static string setDisplayName(string value)
@@ -365,14 +365,14 @@ partial class Program
     private static void showConfig()
     {
         Print($"ServiceName: {serviceName}");
+        Print($"DisplayName: {displayName}");
+        Print($"Description: {description}");
         Print($"Worker: {worker}");
         Print($"Worker's fileName: {fileName}");
         Print($"Worker's arguments: {arguments}");
         Print($"WorkingDir: {workingDir}");
         Print($"OutFileDir: {outFileDir}");
         Print($"WorkerEncoding: {workerEncoding}");
-        Print($"Description: {description}");
-        Print($"DisplayName: {displayName}");
         Print($"Domain: {domain}");
         Print($"User: {user}");
         Print($"Password: {password}");
@@ -426,7 +426,8 @@ partial class Program
                 Print($"Service {name} is already installed!");
                 return 1;
             }
-            var _args = $"create {name} binPath= \"{BinPath}\" start= auto DisplayName= \"{displayName}\"";
+            var _args = $"create {name} binPath= \"{BinPath}\" start= auto "
+                + $"DisplayName= \"{displayName}\"";
             if (user.Length > 0)
             {
                 var obj = (domain.Length > 0) ? $"{domain}\\{user}" : user;

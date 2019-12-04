@@ -45,7 +45,7 @@ WorkingDir: worker
 # 输出目录，程序运行过程的输出将会写到这个目录下面，请确保该目录已存在
 OutFileDir: outfiles
 
-# 程序输出的编码，如果不确定，请设为空或 none
+# 程序输出的编码，如果不确定，请设为空
 WorkerEncoding: utf8
 ```
 
