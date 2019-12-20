@@ -81,10 +81,6 @@ EasyService 实质是将自己（svc.exe）注册为一个系统服务，此服�
 
 EasyService 源码见 [src/main.cs](https://github.com/pandolia/easy-service/blob/master/src/Main.cs) 。
 
-### 典型用例
-
-Appin 网站介绍了用 EasyService 部署 frp 内网穿透服务的方法，请看 [这里](https://www.appinn.com/easyservice-for-windows/) 。
-
 ### 与 NSSM 的对比
 
 Windows 下部署服务的同类型的工具还有 NSSM ，与 EasyService 相比， NSSM 主要优点有：
@@ -104,3 +100,7 @@ NSSM 主要缺点是界面和文档都是英文的，对新手也不见得更友
 * 日志自动按日期输出到不同文件
 
 * 停止服务时，先向工作进程的标准输入写入 "exit" ，并等待工作进程自己退出（但等待时间不超过 10 秒），这个 “通知退出” 的机制对于需要有些进行清理工作的程序来说是非常关键的
+
+### 典型用例
+
+Appin 网站介绍了用 EasyService 部署 frp 内网穿透服务的方法，请看 [这里](https://www.appinn.com/easyservice-for-windows/) 。
