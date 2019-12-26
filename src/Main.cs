@@ -241,7 +241,7 @@ partial class Program
                 return "bad format";
             }
             arguments = worker.Substring(i + 1).TrimStart();
-            return checkValid(fileName);
+            return null;
         }
 
         var ii = worker.IndexOf(' ');
@@ -249,12 +249,12 @@ partial class Program
         {
             fileName = worker;
             arguments = "";
-            return checkValid(fileName);
+            return null;
         }
 
         fileName = worker.Substring(0, ii);
         arguments = worker.Substring(ii + 1).TrimStart();
-        return checkValid(fileName);
+        return null;
     }
 
     private static string setWorkingDir(string value)
