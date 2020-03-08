@@ -36,7 +36,7 @@
 
 ```conf
 # Windows 系统服务名称、不能与系统中已有服务重名
-ServiceName: An Easy Service
+ServiceName: my-service
 
 # 需要运行的可执行程序及命令行参数
 Worker: node index.js
@@ -51,7 +51,7 @@ OutFileDir: outfiles
 WorkerEncoding: utf8
 ```
 
-（4） 用管理员身份打开命令行窗口， cd 到 hello-svc 目录：
+（4） 用管理员身份打开命令行窗口（Win10 系统下，需要在开始菜单中搜索 cmd 然后右键以管理员身份运行）， cd 到 hello-svc 目录：
 
 a. 运行 ***svc check*** 命令检查配置是否合法
 
@@ -62,8 +62,6 @@ b. 运行 ***svc test-worker*** 命令测试 Worker 程序是否能正常运行
 c. 运行 ***svc install*** 命令注册并启动系统服务，此时你的程序就已经开始运行了，即便用户注销也不会停止运行，且系统开机后、用户登录之前就会自动运行。在服务管理控制台中可以查看已注册的服务。
 
 d. 运行 ***svc stop|start|restart|remove*** 停止、启动、重启或删除本系统服务。
-
-Win10 系统下，需要在开始菜单中搜索 cmd 然后右键以管理员身份运行，再 cd 到 svc.conf 所在的目录，然后再执行以上命令。
 
 ### 注册多个服务
 
@@ -79,9 +77,9 @@ c. 注册服务之前，WorkingDir/OutFileDir 所指定的目录必须先创建�
 
 ### 注意事项
 
-为保证的数据的一致性，要求：
+为保证服务的一致性，要求：
 
-* （1） 运行 ***svc install*** 安装服务后，不应对 svc.conf 文件进行修改，删除，也不得移动或重命名目录，除非再次运行 ***svc remove*** 删除了服务
+* （1） 运行 ***svc install*** 安装服务之后，在运行 ***svc remove*** 删除服务之前，不应对 svc.conf 文件进行修改，删除，也不得移动或重命名目录
 
 * （2） 不应在服务管理控制台中对采用 EasyService 安装的服务进行修改或操作，也不应采用除 svc 命令以外的其他方式进行修改或操作
 
