@@ -6,6 +6,7 @@ using System.ServiceProcess;
 using System.Threading;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Management;
 
 delegate string FieldSetter(string value);
 
@@ -18,8 +19,6 @@ partial class Program
 
 partial class Program
 {
-    public static string BinDir = AppDomain.CurrentDomain.BaseDirectory;
-
     public static string BinPath = Assembly.GetExecutingAssembly().Location;
 
     public static void SetCwd(string d)
@@ -41,16 +40,16 @@ partial class Program
         }
     }
 
-    public static ServiceController GetService(string name)
+    public static ServiceController GetServiceController(string name)
     {
-        var scList = ServiceController.GetServices();
-        foreach (var sc in scList)
+        foreach (var sc in ServiceController.GetServices())
         {
             if (sc.ServiceName == name)
             {
                 return sc;
             }
         }
+
         return null;
     }
 
@@ -103,10 +102,12 @@ partial class Program
         foreach (var line in text.Split('\n'))
         {
             var s = line.Replace('\t', ' ').Trim();
+
             if (s.Length == 0 || s[0] == '#')
             {
                 continue;
             }
+
             var i = s.IndexOf(':');
             var key = (i == -1) ? s : s.Substring(0, i).TrimEnd();
             var sKey = "set" + key;
@@ -133,6 +134,7 @@ partial class Program
             {
                 continue;
             }
+
             var valueErr = setterDict[sKey]("");
             if (valueErr != null)
             {
@@ -164,62 +166,39 @@ partial class Program
     private static string arguments = null;
     private static Encoding workerEncodingObj = null;
 
-    private static Dictionary<string, FieldSetter> setterDict = new Dictionary<string, FieldSetter>
+    private static readonly Dictionary<string, FieldSetter> setterDict
+        = new Dictionary<string, FieldSetter>
     {
-        { "setServiceName", setServiceName },
-        { "setWorker", setWorker },
-        { "setWorkingDir", setWorkingDir },
-        { "setOutFileDir", setOutFileDir },
-        { "setWorkerEncoding", setWorkerEncoding },
-        { "setDomain", setDomain },
-        { "setUser", setUser },
-        { "setPassword", setPassword },
-        { "setDescription", setDescription },
-        { "setDisplayName", setDisplayName }
+        { "setServiceName", SetServiceName },
+        { "setWorker", SetWorker },
+        { "setWorkingDir", SetWorkingDir },
+        { "setOutFileDir", SetOutFileDir },
+        { "setWorkerEncoding", SetWorkerEncoding },
+        { "setDomain", SetDomain },
+        { "setUser", SetUser },
+        { "setPassword", SetPassword },
+        { "setDescription", SetDescription },
+        { "setDisplayName", SetDisplayName }
     };
 
-    private static string removeOuterQuote(string value)
+    private static string SetServiceName(string value)
     {
-        if (value[0] == '"' || value[0] == '\'')
-        {
-            char quote = value[0];
-            var i = value.IndexOf(quote, 1);
-            if (i == value.Length - 1)
-            {
-                return value.Substring(1, value.Length - 2);
-            }
-        }
-        return value;
-    }
-
-    private static string checkValid(string value)
-    {
-        char[] invalidFileNameChars =  Path.GetInvalidFileNameChars();
-
-        foreach (char c in value)  
-        {
-            if (Array.IndexOf(invalidFileNameChars, c) >= 0)
-            {
-                return "contain invalid word ' \" | ~ # % & * { } \' : < > ? / + '";
-            }
-        }
-
-        return null;
-    }
-
-    private static string setServiceName(string value)
-    {
-        serviceName = removeOuterQuote(value.Trim());
+        serviceName = value;
 
         if (serviceName.Length == 0)
         {
             return "empty";
         }
 
-        return checkValid(serviceName);
+        if (serviceName.Contains("\""))
+        {
+            return "contains \"";
+        }
+
+        return null;
     }
 
-    private static string setWorker(string value)
+    private static string SetWorker(string value)
     {
         worker = value;
 
@@ -235,11 +214,13 @@ partial class Program
             {
                 return "bad format";
             }
+
             fileName = worker.Substring(1, i - 1).Trim();
             if (fileName.Length == 0)
             {
                 return "bad format";
             }
+
             arguments = worker.Substring(i + 1).TrimStart();
             return null;
         }
@@ -257,40 +238,46 @@ partial class Program
         return null;
     }
 
-    private static string setWorkingDir(string value)
+    private static string SetWorkingDir(string value)
     {
         workingDir = value;
         if (!Directory.Exists(workingDir))
         {
             return "directory not exists";
         }
+
         return null;
     }
 
-    private static string setOutFileDir(string value)
+    private static string SetOutFileDir(string value)
     {
         outFileDir = value;
         if (!Directory.Exists(outFileDir))
         {
             return "directory not exists";
         }
+
         return null;
     }
 
-    private static string setWorkerEncoding(string value)
+    private static string SetWorkerEncoding(string value)
     {
         workerEncoding = value;
+
         value = value.ToLower();
+
         if (value == "" || value == "null")
         {
             workerEncoding = "null";
             workerEncodingObj = null;
             return null;
         }
+
         if (value.StartsWith("utf") && !value.StartsWith("utf-"))
         {
             value = "utf-" + value.Substring(3);
         }
+
         try
         {
             workerEncodingObj = Encoding.GetEncoding(value);
@@ -299,40 +286,71 @@ partial class Program
         {
             return e.Message;
         }
+
         return null;
     }
 
-    private static string setDomain(string value)
+    private static string SetDomain(string value)
     {
         domain = value;
+
+        if (value.Contains("\""))
+        {
+            return "contains \"";
+        }
+
         return null;
     }
 
-    private static string setUser(string value)
+    private static string SetUser(string value)
     {
         user = value;
+
+        if (value.Contains("\""))
+        {
+            return "contains \"";
+        }
+
         return null;
     }
 
-    private static string setPassword(string value)
+    private static string SetPassword(string value)
     {
         password = value;
+
+        if (value.Contains("\""))
+        {
+            return "contains \"";
+        }
+
         return null;
     }
 
-    private static string setDescription(string value)
+    private static string SetDescription(string value)
     {
-        description = removeOuterQuote(value.Trim());
-        return checkValid(description);
+        description = value;
+
+        if (value.Contains("\""))
+        {
+            return "contains \"";
+        }
+
+        return null;
     }
 
-    private static string setDisplayName(string value)
+    private static string SetDisplayName(string value)
     {
-        displayName = removeOuterQuote(value.Trim());
-        return checkValid(displayName);
+        displayName = value;
+
+        if (value.Contains("\""))
+        {
+            return "contains \"";
+        }
+
+        return null;
     }
 
-    private static string readConfig()
+    private static string ReadSvcConfig()
     {
         var errs = ReadConfig(CONF_FILE, setterDict);
         if (errs.Count > 0)
@@ -351,6 +369,7 @@ partial class Program
             {
                 continue;
             }
+
             var realName = Path.Combine(workingDir, fileName + suffix);
             if (File.Exists(realName))
             {
@@ -362,7 +381,7 @@ partial class Program
         return null;
     }
 
-    private static void showConfig()
+    private static void ShowConfig()
     {
         Print($"ServiceName: {serviceName}");
         Print($"DisplayName: {displayName}");
@@ -381,40 +400,51 @@ partial class Program
 
 partial class Program
 {
-    private static string op = null;
+    private static bool testMode = false;
 
     public static int Main(string[] args)
     {
-        SetCwd(BinDir);
+        if (args.Length == 0)
+        {
+            ServiceBase.Run(new SimpleService(OnStart, OnStop));
+            return 0;
+        }
 
-        var err = readConfig();
+        string op = args[0];
+
+        if (op == "version" || op == "--version" || op == "-v")
+        {
+            Print("Easy Service: v1.0.2");
+            return 0;
+        }
+
+        var err = ReadSvcConfig();
         if (err != null)
         {
-            log($"Configuration Error!\n{err}", false);
+            Log($"Configuration Error!\n{err}", false);
             Print(err);
             return 1;
         }
 
-        string name = $"\"{serviceName}\"";
-        string serviceDescription = $"\"{description}\"";
-        var sc = GetService(serviceName);
+        var sc = GetServiceController(serviceName);
         var status = (sc == null) ? "not installed" : sc.Status.ToString().ToLower();
-        op = args.Length > 0 ? args[0] : op;
 
-        if (op == "check")
+        if (op == "check" || op == "status")
         {
-            showConfig();
+            ShowConfig();
             Print($"\nService status: {status}");
             return 0;
         }
 
         if (op == "test-worker")
         {
-            onStart();
+            testMode = true;
+            OnStart();
             if (proc == null)
             {
                 return 1;
             }
+
             proc.WaitForExit();
             return proc.ExitCode;
         }
@@ -423,83 +453,84 @@ partial class Program
         {
             if (sc != null)
             {
-                Print($"Service {name} is already installed!");
+                Print($"Service \"{serviceName}\" is already installed!");
                 return 1;
             }
-            var _args = $"create {name} binPath= \"{BinPath}\" start= auto "
+
+            var scArgs = $"create \"{serviceName}\" binPath= \"{BinPath}\" start= auto "
                 + $"DisplayName= \"{displayName}\"";
+
             if (user.Length > 0)
             {
                 var obj = (domain.Length > 0) ? $"{domain}\\{user}" : user;
-                _args = $"{_args} obj= \"{obj}\" password= \"{password}\"";
+                scArgs = $"{scArgs} obj= \"{obj}\" password= \"{password}\"";
             }
-            Exec("sc", _args);
-            var _argsDescription = $"description {name} {serviceDescription}";
-            Exec("sc", _argsDescription);
-            if ((sc = GetService(serviceName)) == null)
+
+            string cwd = Path.GetFullPath(".");
+            Exec("sc", scArgs);
+            Exec("sc", $"description \"{serviceName}\" \"{description} @<{cwd}>\"");
+
+            if ((sc = GetServiceController(serviceName)) == null)
             {
-                Print($"Failed to install Service {name}");
+                Print($"Failed to install Service \"{serviceName}\"");
                 return 1;
             }
-            var ss = $"Installed Service {name}";
+
+            var ss = $"Installed Service \"{serviceName}\"";
             Print(ss);
-            log(ss, false);
-            log("");
-            startService(sc, name);
+            Log(ss, false);
+            Log("");
+
+            StartService(sc);
             return 0;
         }
 
         if (sc == null && (op == "remove" || op == "start" || op == "stop" || op == "restart"))
         {
-            Print($"Service {name} is not installed!");
+            Print($"Service \"{serviceName}\" is not installed!");
             return 1;
         }
 
         if (op == "remove")
         {
-            stopService(sc, name);
-            Exec("sc", $"delete {name}");
-            if (GetService(serviceName) != null)
+            StopService(sc);
+            Exec("sc", $"delete \"{serviceName}\"");
+            if (GetServiceController(serviceName) != null)
             {
-                Print($"Failed to remove Service {name}");
+                Print($"Failed to remove Service \"{serviceName}\"");
                 return 1;
             }
-            var ss = $"Remove Service {name}";
-            log("");
-            log(ss);
+
+            var ss = $"Remove Service \"{serviceName}\"";
+            Log("");
+            Log(ss);
             Print(ss);
             return 0;
         }
 
         if (op == "start")
         {
-            return startService(sc, name);
+            return StartService(sc);
         }
 
         if (op == "stop")
         {
-            return stopService(sc, name);
+            return StopService(sc);
         }
 
         if (op == "restart")
         {
-            stopService(sc, name);
-            return startService(sc, name);
+            StopService(sc);
+            return StartService(sc);
         }
 
-        if (op != null || status != "startpending")
-        {
-            Print("Usage: svc check|test-worker|install|start|stop|restart|remove");
-            return 1;
-        }
-
-        run();
-        return 0;
+        Print("Usage: svc check|test-worker|install|start|stop|restart|remove");
+        return 1;
     }
 
-    private static void log(string s, bool append = true)
+    public static void Log(string s, bool append = true)
     {
-        if (op == "test-worker")
+        if (testMode)
         {
             if (s.StartsWith("[ERROR]") || s.StartsWith("[WARN]"))
             {
@@ -507,6 +538,7 @@ partial class Program
             }
             return;
         }
+
         try
         {
             s = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {s}";
@@ -518,31 +550,33 @@ partial class Program
         }
     }
 
-    private static int startService(ServiceController sc, string name)
+    private static int StartService(ServiceController sc)
     {
         if (sc.Status == ServiceControllerStatus.Running)
         {
-            Print($"Service {name} is already started");
+            Print($"Service \"{sc.ServiceName}\" is already started");
             return 1;
         }
+
         sc.Start();
         sc.WaitForStatus(ServiceControllerStatus.Running);
         sc.Refresh();
-        Print($"Started Service {name}");
+        Print($"Started Service \"{sc.ServiceName}\"");
         return 0;
     }
 
-    private static int stopService(ServiceController sc, string name)
+    private static int StopService(ServiceController sc)
     {
         if (sc.Status == ServiceControllerStatus.Stopped)
         {
-            Print($"Service {name} is already stopped");
+            Print($"Service \"{sc.ServiceName}\" is already stopped");
             return 1;
         }
+
         sc.Stop();
         sc.WaitForStatus(ServiceControllerStatus.Stopped);
         sc.Refresh();
-        Print($"Stopped Service {name}");
+        Print($"Stopped Service \"{sc.ServiceName}\"");
         return 0;
     }
 }
@@ -553,63 +587,144 @@ partial class Program
     private static object procLock = null;
     private static Process proc = null;
 
-    private static void run()
+    private static void OnStart()
     {
-        var service = new SimpleService(onStart, onStop);
-        ServiceBase.Run(service);
-    }
+        var err = ReadSvcConfigInSvcBin();
+        if (err != null)
+        {
+            err = $"Failed to read configuration for service \"{serviceName}\": {err}";
+            Log($"[ERROR] {err}");
+            throw new Exception(err);
+        }
 
-    private static void onStart()
-    {
-        log($"[INFO] Starting service \"{serviceName}\"...");
-        psi = new ProcessStartInfo();
-        psi.FileName = fileName;
-        psi.Arguments = arguments;
-        psi.WorkingDirectory = workingDir;
-        psi.UseShellExecute = false;
-        psi.RedirectStandardOutput = true;
-        psi.RedirectStandardError = true;
-        psi.RedirectStandardInput = (op != "test-worker");
-        psi.StandardErrorEncoding = workerEncodingObj;
-        psi.StandardOutputEncoding = workerEncodingObj;
-        psi.StandardErrorEncoding = workerEncodingObj;
+        try
+        {
+            psi = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                WorkingDirectory = workingDir,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                RedirectStandardInput = !testMode,
+                StandardErrorEncoding = workerEncodingObj,
+                StandardOutputEncoding = workerEncodingObj
+            };
+        }
+        catch (Exception ex)
+        {
+            err = $"Failed to create process start info for service \"{serviceName}\": {ex.Message}";
+            Log($"[ERROR] {err}");
+            throw new Exception(err);
+        }
+
         procLock = new object();
-        proc = startWorker();
-        log($"[INFO] Started Service \"{serviceName}\"");
+
+        proc = StartWorker();
+        if (proc == null)
+        {
+            err = $"Failed to start worker for service \"{serviceName}\"";
+            Log($"[ERROR] {err}");
+            throw new Exception(err);
+        }
+
+        Log($"[INFO] Started Service \"{serviceName}\"");
     }
 
-    private static Process startWorker()
+    private static string ReadSvcConfigInSvcBin()
+    {
+        if (testMode)
+        {
+            return null;
+        }
+
+        SetCwd(Path.GetDirectoryName(BinPath));
+
+        var mngObj = GetServiceManagementObject();
+        if (mngObj == null)
+        {
+            return "can not get service management object";
+        }        
+        
+        try
+        {
+            var svcDescription = mngObj["Description"].ToString();
+            var i = svcDescription.LastIndexOf('<') + 1;
+            var n = svcDescription.Length - 1 - i;
+            var cwd = svcDescription.Substring(i, n);
+            SetCwd(cwd);
+        }
+        catch (Exception ex)
+        {
+            return $"can not set cwd from service's description, {ex.Message}";
+        }
+
+        var err = ReadSvcConfig();
+        if (err != null)
+        {
+            return $"configuration error, {err}";
+        }
+
+        return null;
+    }
+
+    private static ManagementObject GetServiceManagementObject()
+    {
+        // https://stackoverflow.com/questions/1841790/how-can-a-windows-service-determine-its-servicename
+
+        int processId = Process.GetCurrentProcess().Id;
+        string query = $"SELECT * FROM Win32_Service where ProcessId = {processId}";
+        using (var searcher = new ManagementObjectSearcher(query))
+        {
+            foreach (ManagementObject queryObj in searcher.Get())
+            {
+                return queryObj;
+            }
+        }
+
+        return null;
+    }
+
+    private static Process StartWorker()
     {
         Process p = null;
         try
         {
-            p = new Process();
-            p.StartInfo = psi;
-            p.OutputDataReceived += outPut;
-            p.ErrorDataReceived += outPut;
-            if (op != "test-worker")
+            p = new Process
             {
-                p.Exited += onWorkerExitWithoutBeNotified;
+                StartInfo = psi
+            };
+
+            p.OutputDataReceived += OutPut;
+            p.ErrorDataReceived += OutPut;
+
+            if (!testMode)
+            {
+                p.Exited += OnWorkerExitWithoutBeNotified;
                 p.EnableRaisingEvents = true;
             }
+
             p.Start();
             p.BeginErrorReadLine();
             p.BeginOutputReadLine();
-            log($"[INFO] Created Worker `{worker}` in `{workingDir}`");
+
+            Log($"[INFO] Created Worker `{worker}` in `{workingDir}`");
             return p;
         }
         catch (Exception e)
         {
-            log($"[ERROR] Failed to create Worker `{worker}` in `{workingDir}`\n{e}");
+            Log($"[ERROR] Failed to create Worker `{worker}` in `{workingDir}`\n{e}");
             if (p != null)
             {
                 p.Close();
             }
+
             return null;
         }
     }
 
-    private static void onWorkerExitWithoutBeNotified(object sender, EventArgs e)
+    private static void OnWorkerExitWithoutBeNotified(object sender, EventArgs e)
     {
         lock (procLock)
         {
@@ -617,14 +732,16 @@ partial class Program
             {
                 return;
             }
+
             var code = proc.ExitCode;
-            log($"[WARN] Worker exited with out be notified (code {code})");
+            Log($"[WARN] Worker exited with out be notified (code {code})");
             if (code == 0)
             {
                 proc = null;
                 return;
             }
-            log($"[INFO] Recreate Worker after {restartWaitSeconds} seconds");
+
+            Log($"[INFO] Recreate Worker after {restartWaitSeconds} seconds");
         }
 
         Thread.Sleep(restartWaitSeconds * 1000);
@@ -635,23 +752,23 @@ partial class Program
             {
                 return;
             }
-            proc = startWorker();
+
+            proc = StartWorker();
         }
     }
 
-    private static void onStop()
+    private static void OnStop()
     {
         lock (procLock)
         {
-            log($"[INFO] Stopping Service \"{serviceName}\"...");
             var p = proc;
             proc = null;
-            stopWorker(p);
-            log($"[INFO] Stopped Service \"{serviceName}\"");
+            StopWorker(p);
+            Log($"[INFO] Stopped Service \"{serviceName}\"");
         }
     }
 
-    private static void stopWorker(Process p)
+    private static void StopWorker(Process p)
     {
         if (p == null)
         {
@@ -660,54 +777,54 @@ partial class Program
 
         if (p.HasExited)
         {
-            log($"[WARN] Worker exited with out be notified (code {p.ExitCode}).");
+            Log($"[WARN] Worker exited with out be notified (code {p.ExitCode}).");
             return;
         }
 
-        p.Exited -= onWorkerExitWithoutBeNotified;
+        p.Exited -= OnWorkerExitWithoutBeNotified;
 
         try
         {
             p.StandardInput.Write("exit\r\n");
             p.StandardInput.Flush();
-            log("[INFO] Notified Worker to exit");
+            Log("[INFO] Notified Worker to exit");
         }
         catch (Exception e)
         {
-            log($"[ERROR] Failed to notify Worker to exit, {e.Message}");
+            Log($"[ERROR] Failed to notify Worker to exit, {e.Message}");
             try
             {
                 p.Kill();
-                log("[WARN] Worker has been killed");
+                Log("[WARN] Worker has been killed");
             }
             catch (Exception ee)
             {
-                log($"[ERROR] Failed to kill Worker, {ee.Message}");
+                Log($"[ERROR] Failed to kill Worker, {ee.Message}");
             }
             return;
         }
 
         if (!p.WaitForExit(waitSeconds * 1000))
         {
-            log("[WARN] Worker refused to exit");
+            Log("[WARN] Worker refused to exit");
             try
             {
                 p.Kill();
-                log("[WARN] Worker has been killed");
+                Log("[WARN] Worker has been killed");
             }
             catch (Exception ee)
             {
-                log($"[ERROR] Failed to kill Worker, {ee.Message}");
+                Log($"[ERROR] Failed to kill Worker, {ee.Message}");
             }
             return;
         }
 
-        log($"[INFO] Worker exited with code {p.ExitCode}");
+        Log($"[INFO] Worker exited with code {p.ExitCode}");
     }
 
-    private static object outLock = new object();
+    private static readonly object outLock = new object();
 
-    private static void outPut(object sender, DataReceivedEventArgs ev)
+    private static void OutPut(object sender, DataReceivedEventArgs ev)
     {
         string s = ev.Data;
 
@@ -731,7 +848,7 @@ partial class Program
 
         lock (outLock)
         {
-            if (op == "test-worker")
+            if (testMode)
             {
                 Print(s);
                 return;
@@ -742,7 +859,7 @@ partial class Program
             }
             catch (Exception e)
             {
-                log($"[ERROR] Failed to write Worker's output to `{outFile}`, {e.Message}");
+                Log($"[ERROR] Failed to write Worker's output to `{outFile}`, {e.Message}");
             }
             try
             {
@@ -750,7 +867,7 @@ partial class Program
             }
             catch (Exception e)
             {
-                log($"[ERROR] Failed to write Worker's output to `{lastLineFile}`, {e.Message}");
+                Log($"[ERROR] Failed to write Worker's output to `{lastLineFile}`, {e.Message}");
             }
         }
     }
@@ -758,8 +875,8 @@ partial class Program
 
 class SimpleService : ServiceBase
 {
-    private Action onStart;
-    private Action onStop;
+    private readonly Action onStart;
+    private readonly Action onStop;
 
     public SimpleService(Action onStart, Action onStop)
     {

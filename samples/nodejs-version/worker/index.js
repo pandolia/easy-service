@@ -3,7 +3,7 @@ function log(s) {
     console.log(`[${t.toLocaleString()}] ${s}`);
 }
 
-log('Started SampleWorker(node.js version)')
+log('Started SampleWorker(node.js version), press enter to exit')
 
 var intv = setInterval(function () { log('Running'); }, 1000);
 

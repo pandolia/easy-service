@@ -9,7 +9,7 @@ def log(s):
     sys.stdout.flush()
 
 def loop():
-    log('Started SampleWorker(python version)')
+    log('Started SampleWorker(python version), press enter to exit')
     while running:
         log('Running')
         time.sleep(1)
@@ -19,7 +19,11 @@ running = True
 th = threading.Thread(target=loop)
 th.start()
 
-msg = raw_input()
+try:
+    msg = raw_input()
+except:
+    msg = input()
+
 log('Received message "%s" from the Monitor' % msg)
 
 running = False

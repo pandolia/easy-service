@@ -1,0 +1,64 @@
+[2020-03-08 16:19:01] Started SampleWorker(c# version), press Enter to exit
+[2020-03-08 16:19:01] Running
+[2020-03-08 16:19:02] Running
+[2020-03-08 16:19:03] Running
+[2020-03-08 16:19:04] Running
+[2020-03-08 16:19:05] Running
+[2020-03-08 16:19:06] Running
+[2020-03-08 16:19:07] Running
+[2020-03-08 16:19:08] Running
+[2020-03-08 16:19:09] Running
+[2020-03-08 16:19:10] Running
+[2020-03-08 16:19:11] Running
+[2020-03-08 16:19:12] Running
+[2020-03-08 16:19:13] Running
+[2020-03-08 16:19:14] Running
+[2020-03-08 16:19:15] Running
+[2020-03-08 16:19:16] Running
+[2020-03-08 16:19:17] Running
+[2020-03-08 16:19:18] Running
+[2020-03-08 16:19:19] Running
+[2020-03-08 16:19:20] Running
+[2020-03-08 16:19:21] Running
+[2020-03-08 16:19:22] Running
+[2020-03-08 16:19:23] Running
+[2020-03-08 16:19:24] Running
+[2020-03-08 16:19:25] Running
+[2020-03-08 16:19:26] Running
+[2020-03-08 16:19:27] Running
+[2020-03-08 16:19:28] Running
+[2020-03-08 16:19:29] Running
+[2020-03-08 16:19:30] Running
+[2020-03-08 16:19:31] Running
+[2020-03-08 16:19:32] Running
+[2020-03-08 16:19:33] Running
+[2020-03-08 16:19:34] Received message "exit" from the Monitor
+[2020-03-08 16:19:34] Stopped SampleWorker(c# version)
+[2020-03-08 16:19:43] Started SampleWorker(c# version), press Enter to exit
+[2020-03-08 16:19:43] Running
+[2020-03-08 16:19:44] Running
+[2020-03-08 16:19:45] Running
+[2020-03-08 16:19:46] Running
+[2020-03-08 16:19:47] Running
+[2020-03-08 16:19:48] Running
+[2020-03-08 16:19:49] Running
+[2020-03-08 16:19:50] Running
+[2020-03-08 16:19:51] Running
+[2020-03-08 16:19:52] Running
+[2020-03-08 16:19:53] Received message "exit" from the Monitor
+[2020-03-08 16:19:53] Stopped SampleWorker(c# version)
+[2020-03-08 16:19:54] Started SampleWorker(c# version), press Enter to exit
+[2020-03-08 16:19:54] Running
+[2020-03-08 16:19:55] Running
+[2020-03-08 16:19:56] Running
+[2020-03-08 16:19:57] Running
+[2020-03-08 16:19:58] Running
+[2020-03-08 16:19:59] Running
+[2020-03-08 16:20:00] Running
+[2020-03-08 16:20:01] Running
+[2020-03-08 16:20:02] Running
+[2020-03-08 16:20:03] Running
+[2020-03-08 16:20:04] Running
+[2020-03-08 16:20:05] Running
+[2020-03-08 16:20:06] Received message "exit" from the Monitor
+[2020-03-08 16:20:06] Stopped SampleWorker(c# version)

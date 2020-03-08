@@ -12,7 +12,7 @@ class Program
 
     public static void Loop()
     {
-        Log("Started SampleWorker(c# version)");
+        Log("Started SampleWorker(c# version), press Enter to exit");
         while (running)
         {
             Log("Running");

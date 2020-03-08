@@ -1,0 +1,39 @@
+[2020-3-8 16:36:47] Started SampleWorker(node.js version), press enter to exit
+[2020-3-8 16:36:48] Running
+[2020-3-8 16:36:49] Running
+[2020-3-8 16:36:50] Running
+[2020-3-8 16:36:51] Running
+[2020-3-8 16:36:52] Running
+[2020-3-8 16:36:53] Running
+[2020-3-8 16:36:54] Running
+[2020-3-8 16:36:55] Running
+[2020-3-8 16:36:56] Running
+[2020-3-8 16:36:57] Running
+[2020-3-8 16:36:58] Running
+[2020-3-8 16:36:59] Running
+[2020-3-8 16:37:00] Running
+[2020-3-8 16:37:01] Running
+[2020-3-8 16:37:02] Running
+[2020-3-8 16:37:03] Running
+[2020-3-8 16:37:04] Running
+[2020-3-8 16:37:05] Running
+[2020-3-8 16:37:06] Running
+[2020-3-8 16:37:07] Running
+[2020-3-8 16:37:08] Running
+[2020-3-8 16:37:09] Running
+[2020-3-8 16:37:10] Running
+[2020-3-8 16:37:11] Running
+[2020-3-8 16:37:12] Received message "exit" from the Monitor
+[2020-3-8 16:37:12] Stopped SampleWorker(node.js version)
+[2020-3-8 16:37:21] Started SampleWorker(node.js version), press enter to exit
+[2020-3-8 16:37:22] Running
+[2020-3-8 16:37:23] Running
+[2020-3-8 16:37:24] Running
+[2020-3-8 16:37:25] Running
+[2020-3-8 16:37:26] Running
+[2020-3-8 16:37:27] Running
+[2020-3-8 16:37:28] Running
+[2020-3-8 16:37:29] Running
+[2020-3-8 16:37:30] Running
+[2020-3-8 16:37:30] Received message "exit" from the Monitor
+[2020-3-8 16:37:30] Stopped SampleWorker(node.js version)
