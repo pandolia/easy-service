@@ -19,6 +19,7 @@ partial class Program
 
 partial class Program
 {
+    public static string BinDir = AppDomain.CurrentDomain.BaseDirectory;
     public static string BinPath = Assembly.GetExecutingAssembly().Location;
 
     public static void SetCwd(string d)
@@ -80,7 +81,7 @@ partial class Program
         }
     }
 
-    private static List<string> ReadConfig(string file, Dictionary<string, FieldSetter> setterDict)
+    public static List<string> ReadConfig(string file, Dictionary<string, FieldSetter> setterDict)
     {
         var errs = new List<string>();
         string text;
@@ -143,6 +144,52 @@ partial class Program
         }
 
         return errs;
+    }
+
+    public static string CopyDir(string src, string dest, string ignoreExt)
+    {
+        var srcDir = new DirectoryInfo(src);
+        if (!srcDir.Exists)
+        {
+            return $"Source directory {src} does not exist";
+        }
+
+        var destDir = new DirectoryInfo(dest);
+        if (destDir.Exists)
+        {
+            return $"Destination directory {dest} already exists";
+        }
+
+        try
+        {
+            destDir.Create();
+        }
+        catch (Exception ex)
+        {
+            return $"Failed to create directory {dest}: {ex.Message}";
+        }
+
+        var srcPath = srcDir.FullName;
+        var destPath = destDir.FullName;
+
+        foreach (var dir in Directory.EnumerateDirectories(srcPath, "*", SearchOption.AllDirectories))
+        {
+            Directory.CreateDirectory(dir.Replace(srcPath, destPath));
+        }
+            
+
+        foreach (var file in Directory.EnumerateFiles(srcPath, "*", SearchOption.AllDirectories))
+        {
+            var tarFile = file.Replace(srcPath, destPath);
+            if (tarFile.EndsWith(ignoreExt))
+            {
+                continue;
+            }
+
+            File.Copy(file, tarFile);
+        }
+
+        return null;
     }
 }
 
@@ -396,6 +443,19 @@ partial class Program
         Print($"User: {user}");
         Print($"Password: {password}");
     }
+
+    private static int CreateProject(string name)
+    {
+        var err = CopyDir($"{BinDir}\\..\\samples\\csharp-version", name, ".log");
+        if (err != null)
+        {
+            Print(err);
+            return 1;
+        }
+
+        Print($"Create an Easy-Service project in {name}");
+        return 0;
+    }
 }
 
 partial class Program
@@ -406,7 +466,7 @@ partial class Program
     {
         if (args.Length == 0)
         {
-            ServiceBase.Run(new SimpleService(OnStart, OnStop));
+            ServiceBase.Run(new SimpleService());
             return 0;
         }
 
@@ -416,6 +476,17 @@ partial class Program
         {
             Print("Easy Service: v1.0.2");
             return 0;
+        }
+
+        if (op == "create")
+        {
+            if (args.Length < 2)
+            {
+                Print("Usage: svc create|check|test-worker|install|start|stop|restart|remove [PROJECT_NAME]");
+                return 1;
+            }
+
+            return CreateProject(args[1]);
         }
 
         var err = ReadSvcConfig();
@@ -524,7 +595,7 @@ partial class Program
             return StartService(sc);
         }
 
-        Print("Usage: svc check|test-worker|install|start|stop|restart|remove");
+        Print("Usage: svc create|check|test-worker|install|start|stop|restart|remove [PROJECT_NAME]");
         return 1;
     }
 
@@ -587,7 +658,7 @@ partial class Program
     private static object procLock = null;
     private static Process proc = null;
 
-    private static void OnStart()
+    public static void OnStart()
     {
         var err = ReadSvcConfigInSvcBin();
         if (err != null)
@@ -597,27 +668,18 @@ partial class Program
             throw new Exception(err);
         }
 
-        try
+        psi = new ProcessStartInfo
         {
-            psi = new ProcessStartInfo
-            {
-                FileName = fileName,
-                Arguments = arguments,
-                WorkingDirectory = workingDir,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                RedirectStandardInput = !testMode,
-                StandardErrorEncoding = workerEncodingObj,
-                StandardOutputEncoding = workerEncodingObj
-            };
-        }
-        catch (Exception ex)
-        {
-            err = $"Failed to create process start info for service \"{serviceName}\": {ex.Message}";
-            Log($"[ERROR] {err}");
-            throw new Exception(err);
-        }
+            FileName = fileName,
+            Arguments = arguments,
+            WorkingDirectory = workingDir,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            RedirectStandardInput = !testMode,
+            StandardErrorEncoding = workerEncodingObj,
+            StandardOutputEncoding = workerEncodingObj
+        };
 
         procLock = new object();
 
@@ -639,7 +701,7 @@ partial class Program
             return null;
         }
 
-        SetCwd(Path.GetDirectoryName(BinPath));
+        SetCwd(BinDir);
 
         var mngObj = GetServiceManagementObject();
         if (mngObj == null)
@@ -757,7 +819,7 @@ partial class Program
         }
     }
 
-    private static void OnStop()
+    public static void OnStop()
     {
         lock (procLock)
         {
@@ -875,22 +937,13 @@ partial class Program
 
 class SimpleService : ServiceBase
 {
-    private readonly Action onStart;
-    private readonly Action onStop;
-
-    public SimpleService(Action onStart, Action onStop)
-    {
-        this.onStart = onStart;
-        this.onStop = onStop;
-    }
-
     protected override void OnStart(string[] args)
     {
-        onStart();
+        Program.OnStart();
     }
 
     protected override void OnStop()
     {
-        onStop();
+        Program.OnStop();
     }
 }

@@ -10,9 +10,11 @@
 
 如果你需要在 Windows 系统下部署网站、API 或其他需要长期在后台运行的服务， EasyService 将是一个很有用的工具。
 
-### 系统要求
+### 安装
 
-EasyService 需要 .NetFramework 4.0 （大部分 Windows 系统都已自带）。可尝试运行 worker/sample-worker.exe ，如果正常运行，则表明系统中已安装 .NetFramework 4.0 。
+下载 [源码及程序](https://github.com/pandolia/easy-service/archive/master.zip)，解压。右键单击 bin 目录下的 register-this-path.bat ，以管理员身份运行，将 bin 目录加入至系统路径中。
+
+重新打开 “我的电脑” ，在任意位置打开一个命令行窗口，输入 ***svc -v*** ，如果正常输出版本信息，则表明安装成功。
 
 ### 使用方法
 
@@ -21,16 +23,16 @@ EasyService 需要 .NetFramework 4.0 （大部分 Windows 系统都已自带）�
 ```
 强制要求： 程序应持续运行
 
-建议： 当程序的标准输入接收到 “exit” 后在 10 秒之内退出
+建议： 当程序的标准输入接收到 “exit” 或 “回车” 后在 10 秒之内退出
 ```
 
 其中建议要求是非强制性的，程序不满足此要求也可以。
 
-典型的程序见 [worker/index.js](https://github.com/pandolia/easy-service/blob/master/worker/index.js) （nodejs 版）， [worker/main.py](https://github.com/pandolia/easy-service/blob/master/worker/main.py) （python 版） 或 [src/SampleWorker.cs](https://github.com/pandolia/easy-service/blob/master/src/SampleWorker.cs) （C# 版）。
+典型的程序见 [index.js](https://github.com/pandolia/easy-service/blob/master/samples/nodejs-version/worker/index.js) （nodejs 版）， [main.py](https://github.com/pandolia/easy-service/blob/master/samples/python-version/worker/main.py) （python 版） 或 [SampleWorker.cs](https://github.com/pandolia/easy-service/blob/master/src/SampleWorker.cs) （C# 版），这三个程序都是每隔 1 秒打印一行信息，键入回车后退出。
 
-（2） 下载 [源码及程序](https://github.com/pandolia/easy-service/archive/master.zip)，解压。
+（2） 打开命令行窗口，输入 ***svc create hello-svc*** ，将创建一个样板工程 hello-svc 。
 
-（3） 打开 svc.conf 文件，修改配置：
+（3） 打开 hello-svc/svc.conf 文件，修改配置：
 
 ```conf
 # Windows 系统服务名称、不能与系统中已有服务重名
@@ -49,7 +51,7 @@ OutFileDir: outfiles
 WorkerEncoding: utf8
 ```
 
-（4） 用管理员账号登录系统，在 svc.exe 所在的目录下打开命令行窗口：
+（4） 用管理员身份打开命令行窗口， cd 到 hello-svc 目录：
 
 a. 运行 ***svc check*** 命令检查配置是否合法
 
@@ -74,6 +76,14 @@ b. 配置文件中的 Worker/WorkingDir/OutFileDir 都是相对于该配置文�
 
 c. 注册服务之前，WorkingDir/OutFileDir 所指定的目录必须先创建好
 ```
+
+### 注意事项
+
+为保证的数据的一致性，要求：
+
+* （1） 运行 ***svc install*** 安装服务后，不应对 svc.conf 文件进行修改，删除，也不得移动或重命名目录，除非再次运行 ***svc remove*** 删除了服务
+
+* （2） 不应在服务管理控制台中对采用 EasyService 安装的服务进行修改或操作，也不应采用除 svc 命令以外的其他方式进行修改或操作
 
 ### 内部实现
 
@@ -100,6 +110,14 @@ NSSM 主要缺点是界面和文档都是英文的，对新手也不见得更友
 * 日志自动按日期输出到不同文件
 
 * 停止服务时，先向工作进程的标准输入写入 "exit" ，并等待工作进程自己退出（但等待时间不超过 10 秒），这个 “通知退出” 的机制对于需要进行清理工作的程序来说是非常关键的
+
+### v1.0.1 版的新功能
+
+* （1） 原版 EasyService 需要对每个服务拷贝一个 svc.exe 作为服务的二进制文件。 v1.0.1 版去掉了此限制，所有 EasyService 服务共用同一个 svc.exe 。
+
+* （2） 增加一个 svc create $project_name 命令，可以快速创建样板工程目录。
+
+* （3） 增加 register-this-path.bat ，可以自动注册 svc.exe 所在的目录，在任意位置都可以使用 svc 命令。
 
 ### 典型用例
 
