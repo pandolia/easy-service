@@ -59,20 +59,19 @@ b. 运行 ***svc test-worker*** 命令测试 Worker 程序是否能正常运行
 
 若测试无误：
 
-c. 运行 ***svc install*** 命令注册并启动系统服务，此时你的程序就已经开始运行了，即便用户注销也不会停止运行，且系统开机后、用户登录之前就会自动运行。在服务管理控制台中可以查看已注册的服务。
+c. 运行 ***svc install*** 命令安装并启动系统服务，此时程序就已经开始运行了
 
-d. 运行 ***svc stop|start|restart|remove*** 停止、启动、重启或删除本系统服务。
+d. 运行 ***svc stop|start|restart|remove*** 停止、启动、重启或删除本系统服务
 
 ### 注册多个服务
 
-如果需要注册多个服务，可以新建多个目录，将 svc.exe 和 svc.conf 拷贝到这些目录，修改 svc.conf 中的服务名和程序名等内容，再在这些目录下打开命令行窗口执行 svc check|test-worker|install 等命令就可以了。需要注意的是：
+如果需要注册多个服务，可以用 ***svc create*** 创建多个目录，修改 svc.conf 中的服务名和程序名等内容，再在这些目录下打开命令行窗口执行 svc check|test-worker|install 等命令就可以了。需要注意的是：
 
-```
-a. 不同目录下的服务名不能相同，也不能和系统已有的服务同名
+* （1） 不同目录下的服务名不能相同，也不能和系统已有的服务同名
 
-b. 配置文件中的 Worker/WorkingDir/OutFileDir 都是相对于该配置文件的路径
+* （2） 配置文件中的 Worker/WorkingDir/OutFileDir 都是相对于该配置文件的路径
 
-c. 注册服务之前，WorkingDir/OutFileDir 所指定的目录必须先创建好
+* （3） 注册服务之前，WorkingDir/OutFileDir 所指定的目录必须先创建好
 ```
 
 ### 注意事项
