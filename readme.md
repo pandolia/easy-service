@@ -12,7 +12,7 @@
 
 ### 安装
 
-下载 [源码及程序](https://github.com/pandolia/easy-service/archive/master.zip)，解压。右键单击 bin 目录下的 register-this-path.bat ，以管理员身份运行，将 bin 目录加入至系统路径中。
+下载 [源码及程序](https://github.com/pandolia/easy-service/archive/master.zip)，解压。右键单击 bin 目录下的 register-this-path.bat ，以管理员身份运行，将 bin 目录加入至系统路径中，也可以手动将此目录加入至系统路径。
 
 重新打开 “我的电脑” ，在任意位置打开一个命令行窗口，输入 ***svc -v*** ，如果正常输出版本信息，则表明安装成功。
 
@@ -75,7 +75,7 @@ d. 运行 ***svc stop|start|restart|remove*** 停止、启动、重启或删除�
 
 为保证服务的一致性，要求：
 
-* （1） 运行 ***svc install*** 安装服务之后，在运行 ***svc remove*** 删除服务之前，不应对 svc.conf 文件进行修改，删除，也不得移动或重命名目录
+* （1） 运行 ***svc install*** 安装服务之后，在运行 ***svc remove*** 删除服务之前，不应对 svc.conf 文件进行修改，删除，也不应移动或重命名目录
 
 * （2） 不应在服务管理控制台中对采用 EasyService 安装的服务进行修改或操作，也不应采用除 svc 命令以外的其他方式进行修改或操作
 
