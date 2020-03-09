@@ -1,5 +1,6 @@
-outfiles/*
-!outfiles/lastline.log
+*.log
+!lastline.log
 svc.log
+.vs
 /src/.vs
 /src/obj
