@@ -19,6 +19,8 @@ public class Conf
 
     public string Description { get; private set; } = null;
 
+    public string Dependencies { get; private set; } = null;
+
     public string Worker { get; private set; } = null;
 
     public string WorkingDir { get; private set; } = null;
@@ -50,6 +52,9 @@ public class Conf
         setterDict = new Dictionary<string, FieldSetter>
         {
             { "setServiceName", SetServiceName },
+            { "setDisplayName", SetDisplayName },
+            { "setDescription", SetDescription },
+            { "setDependencies", SetDependencies },
             { "setWorker", SetWorker },
             { "setWorkingDir", SetWorkingDir },
             { "setOutFileDir", SetOutFileDir },
@@ -57,9 +62,7 @@ public class Conf
             { "setWorkerEncoding", SetWorkerEncoding },
             { "setDomain", SetDomain },
             { "setUser", SetUser },
-            { "setPassword", SetPassword },
-            { "setDescription", SetDescription },
-            { "setDisplayName", SetDisplayName }
+            { "setPassword", SetPassword }
         };
     }
 
@@ -97,8 +100,9 @@ public class Conf
     public void ShowConfig()
     {
         Libs.Print($"ServiceName: {ServiceName}");
-        Libs.Print($"DisplayName: {DisplayName}");
+        Libs.Print($"DisplayName: {DisplayName}"); 
         Libs.Print($"Description: {Description}");
+        Libs.Print($"Dependencies: {Dependencies}");
         Libs.Print($"Worker: {Worker}");
         Libs.Print($"Worker's fileName: {WorkerFileName}");
         Libs.Print($"Worker's arguments: {WorkerArguments}"); 
@@ -138,11 +142,23 @@ public class Conf
         }
 
         return null;
-    }
+    }    
 
     public string SetDescription(string value)
     {
         Description = value;
+
+        if (value.Contains("\""))
+        {
+            return "contains '\"'";
+        }
+
+        return null;
+    }
+
+    public string SetDependencies(string value)
+    {
+        Dependencies = value.Replace(',', '/');
 
         if (value.Contains("\""))
         {

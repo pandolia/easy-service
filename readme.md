@@ -93,8 +93,6 @@ Windows 下部署服务的同类型的工具还有 NSSM ，与 EasyService 相�
 
 * 可以自定义环境变量
 
-* 可以设置服务的依赖服务 dependencies
-
 NSSM 主要缺点是界面和文档都是英文的，对新手也不见得更友好，另外在远程通过命令行编辑和管理服务稍微麻烦一些，需要记住它的命令的参数。
 
 总体而言， EasyService 已实现了大部分服务程序需要的功能，主要优点有：
@@ -107,13 +105,15 @@ NSSM 主要缺点是界面和文档都是英文的，对新手也不见得更友
 
 ### v1.0.1 版的新功能
 
-* （1） 原版 EasyService 需要对每个服务拷贝一个 svc.exe 作为服务的二进制文件。 v1.0.1 版去掉了此限制，所有 EasyService 服务共用同一个 svc.exe 。
+* （1） 原版 EasyService 需要对每个服务拷贝一个 svc.exe 作为服务的二进制文件。 v1.0.1 版去掉了此限制，所有 EasyService 服务共用同一个 svc.exe
 
-* （2） 增加一个 svc create $project_name 命令，可以快速创建样板工程目录。
+* （2） 增加一个 svc create $project_name 命令，可以快速创建样板工程目录
 
-* （3） 增加 register-this-path.bat ，可以自动注册 svc.exe 所在的目录，在任意位置都可以使用 svc 命令。
+* （3） 增加 register-this-path.bat ，可以自动注册 svc.exe 所在的目录，在任意位置都可以使用 svc 命令
 
-* （4） 增加 WaitSecondsForWorkerToExit 配置项，可设置停止服务时等待工作进程退出的最大时间
+* （4） 增加 dependencies 配置项，可以设置本服务的依赖服务
+
+* （5） 增加 WaitSecondsForWorkerToExit 配置项，可设置停止服务时等待工作进程退出的最大时间
 
 ### 典型用例
 
