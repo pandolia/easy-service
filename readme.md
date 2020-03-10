@@ -61,6 +61,8 @@ c. 运行 ***svc install*** 命令安装并启动系统服务，此时程序就�
 
 d. 运行 ***svc stop|start|restart|remove*** 停止、启动、重启或删除本系统服务
 
+e. 运行 ***svc log*** 查看正在运行的服务程序的输出
+
 ### 注册多个服务
 
 如果需要注册多个服务，可以用 ***svc create*** 创建多个目录，修改 svc.conf 中的服务名和程序名等内容，再在这些目录下打开命令行窗口执行 svc check|test-worker|install 等命令就可以了。需要注意的是：

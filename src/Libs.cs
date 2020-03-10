@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Threading;
 
 public delegate string FieldSetter(string value);
 
@@ -180,5 +181,19 @@ public static class Libs
         }
 
         return false;
+    }
+
+    public static Thread NewThread(Action action)
+    {
+        var th = new Thread(() => action());
+        th.IsBackground = true;
+        th.Start();
+        return th;
+    }
+
+    public static long LastWriteTime(string filename)
+    {
+        var fileInfo = new FileInfo(filename);
+        return fileInfo.Exists ? fileInfo.LastWriteTimeUtc.Ticks : 0;
     }
 }

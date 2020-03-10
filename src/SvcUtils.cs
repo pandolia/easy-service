@@ -92,29 +92,8 @@ public static class SvcUtils
     public static void StartSvc(this ServiceController sc)
     {
         sc.Start();
-
-        var errInfo = "Failed to start the service, please refer to svc.log to see what happened";
-        var th = new Thread(() => Waiting("Start", errInfo));
-        th.IsBackground = true;
-        th.Start();
-
         sc.WaitForStatus(ServiceControllerStatus.Running);
         sc.Refresh();
-    }
-
-    private static void Waiting(string info, string errInfo)
-    {
-        Thread.Sleep(2000);
-        Console.Write($"{info}ing");
-        for (int i = 0; i < 6; i++)
-        {
-            Thread.Sleep(1500);
-            Console.Write(".");
-            Console.Out.Flush();
-        }
-
-        Console.Write($"\n{errInfo}\n");
-        Environment.Exit(1);       
     }
 
     public static void StopSvc(this ServiceController sc)

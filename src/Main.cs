@@ -8,7 +8,7 @@ public partial class Program
 {
     private const string VERSION = "Easy Service: v1.0.1";
 
-    private const string COMMANDS = "create|check|status|test-worker|install|start|stop|restart|remove";
+    private const string COMMANDS = "create|check|status|test-worker|install|start|stop|restart|remove|log";
 
     private static readonly string USAGE = $"Usage: svc version|{COMMANDS} [$project_name]";
 
@@ -62,6 +62,18 @@ public partial class Program
         {
             conf.ShowConfig();
             Libs.Print($"\nService status: {status}");
+            return 0;
+        }
+
+        if (op == "log")
+        {
+            if (status != "running")
+            {
+                Libs.Print($"Service \"{conf.ServiceName}\" is not running");
+                return 1;
+            }
+            Libs.NewThread(LoggingSvc);
+            Console.ReadLine();
             return 0;
         }
 
@@ -165,9 +177,26 @@ public partial class Program
             return 1;
         }
 
+        var errInfo = "Failed to start the service, please refer to svc.log to see what happened";
+        Libs.NewThread(() => Waiting("Start", errInfo));
         sc.StartSvc();
         Libs.Print($"Started Service \"{sc.ServiceName}\"");
         return 0;
+    }    
+
+    private static void Waiting(string info, string errInfo)
+    {
+        Thread.Sleep(2000);
+        Console.Write($"{info}ing");
+        for (int i = 0; i < 6; i++)
+        {
+            Thread.Sleep(1500);
+            Console.Write(".");
+            Console.Out.Flush();
+        }
+
+        Console.Write($"\n{errInfo}\n");
+        Environment.Exit(1);
     }
 
     private static int StopService(ServiceController sc)
@@ -197,6 +226,37 @@ public partial class Program
         Log(ss);
         Libs.Print(ss);
         return 0;
+    }
+
+    private static void LoggingSvc()
+    {
+        long prev = 0;
+        while (true)
+        {
+            Thread.Sleep(200);
+
+            var lastWrite = Libs.LastWriteTime(conf.LastLineFile);
+
+            if (lastWrite == 0 || lastWrite == prev)
+            {
+                continue;
+            }
+
+            try
+            {
+                using (var sr = new StreamReader(conf.LastLineFile))
+                {
+                    Console.Write(sr.ReadToEnd());
+                }
+            }
+            catch (Exception)
+            {
+                continue;
+            }
+
+            Console.Out.Flush();
+            prev = lastWrite;
+        }
     }
 }
 
@@ -242,9 +302,8 @@ partial class Program
             var err = ReadSvcConfigInSvcBin();
             if (err != null)
             {
-                err = $"Failed to read configuration for Service \"{conf.ServiceName}\": {err}";
-                Log($"[ERROR] {err}");
-                throw new Exception(err);
+                Log($"[ERROR] Failed to read configuration for Service \"{conf.ServiceName}\": {err}");
+                Environment.Exit(1);
             }
         }
 
@@ -272,7 +331,7 @@ partial class Program
 
         if (proc == null)
         {
-            throw new Exception($"Failed to start worker for Service \"{conf.ServiceName}\"");
+            Environment.Exit(1);
         }
 
         Log($"[INFO] Started Service \"{conf.ServiceName}\"");
