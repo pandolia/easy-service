@@ -14,7 +14,7 @@ If you need to deploy website server, api server or other server that runs perma
 
 Download [the source and binary of EasyService](https://github.com/pandolia/easy-service/archive/master.zip), extract it. Then right click ***bin/register-this-path.bat*** , run with Administrator to add the path of ***bin*** directory to system path. Or add it manual.
 
-Reopen My Computer, open a terminal somewhere, run command ***svc -v*** to check whether the installation is successful.
+Reopen My Computer, open a terminal somewhere, run command *** svc -v *** to check whether the installation is successful.
 
 ### Usage
 
