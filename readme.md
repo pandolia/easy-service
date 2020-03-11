@@ -57,7 +57,7 @@ b. 运行 ***svc test-worker*** 命令测试 Worker 程序是否能正常运行
 
 若测试无误：
 
-c. 运行 ***svc install*** 命令安装并启动系统服务，此时程序就已经开始运行了
+c. 运行 ***svc install*** 命令安装并启动系统服务，此时程序就已经开始在后台运行了
 
 d. 运行 ***svc stop|start|restart|remove*** 停止、启动、重启或删除本系统服务
 
@@ -85,7 +85,7 @@ e. 运行 ***svc log*** 查看正在运行的服务程序的输出
 
 EasyService 实质是将自己（svc.exe）注册为一个系统服务，此服务启动时，会读取 svc.conf 中的配置，创建一个子进程运行 Worker 中指定的程序及命令行参数，之后，监视该子进程，如果发现子进程停止运行，会重新启动一个子进程。而当此服务停止时，会向子进程的标准输入中写入数据 “exit” ，并等待子进程退出，如果等待时间超过 5 秒，则直接终止子进程。
 
-EasyService 源码见 [src/main.cs](https://github.com/pandolia/easy-service/blob/master/src/Main.cs) 。
+EasyService 源码见 [src](https://github.com/pandolia/easy-service/tree/master/src) 。
 
 ### 与 NSSM 的对比
 

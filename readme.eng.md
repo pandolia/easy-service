@@ -6,13 +6,15 @@ If your Windows program needs to run permanently in the background, and you want
 
 Unfortunately, making a program that can be registered as a system service is not an easy task. First, the propgram must be an executable binary, so you can't write it with script language like Python or virtual machine language like Java. Second, you must write it in accordance with the format of Windows Service Program, which is complecated. Refer to [MS official document](https://code.msdn.microsoft.com/windowsapps/CppWindowsService-cacf4948) to see how to make a Windows Service Program.
 
-[EasyService](https://github.com/pandolia/easy-service) is a small tool which can register normal program as a system service. It's only 16KB. You can write your program in normal way with whatever language you like, and register it as a system servie, then it will be started automatically after system booting, runs permanently in the background, and keeps runnning even after you logout the system.
+[EasyService](https://github.com/pandolia/easy-service) is a small tool which can register normal program as a system service. It's only 25KB. You can write your program in normal way with whatever language you like, and register it as a system servie, then it will be started automatically after system booting, runs permanently in the background, and keeps runnning even after you logout the system.
 
 If you need to deploy website server, api server or other server that runs permanently in the background in Windows, EasyService will be a very usefull tool.
 
-### System Requirement
+### Setup
 
-EasyService requires .NetFramework 4.0 (which is already installed in most Windows distributions). Try to run [worker/sample-worker.exe](https://github.com/pandolia/easy-service/raw/master/worker/sample-worker.exe), if it runs normally, then .NetFramework 4.0 is installed in your system.
+Download [the source and binary of EasyService](https://github.com/pandolia/easy-service/archive/master.zip), extract it. Then right click ***bin/register-this-path.bat*** , run with Administrator to add the path of ***bin*** directory to system path. Or add it manual.
+
+Reopen My Computer, open a terminal somewhere, run command ***svc -v*** to check whether the installation is successful.
 
 ### Usage
 
@@ -21,14 +23,14 @@ EasyService requires .NetFramework 4.0 (which is already installed in most Windo
 ```
 mandatory requirement: the program runs permanently
 
-recommendation: the program exits in 10 seconds when receives data "exit" in its stdin
+recommendation: the program exits in 5 seconds when receives data "exit" in its stdin
 ```
 
-Typical programs are: [worker/index.js](https://github.com/pandolia/easy-service/blob/master/worker/index.js) (nodejs version), [worker/main.py](https://github.com/pandolia/easy-service/blob/master/worker/main.py) (Python version), and [src/SampleWorker.cs](https://github.com/pandolia/easy-service/blob/master/src/SampleWorker.cs) (C# version)。
+Typical programs are: [index.js](https://github.com/pandolia/easy-service/blob/master/samples/nodejs-version/worker/index.js) (nodejs version), [main.py](https://github.com/pandolia/easy-service/blob/master/samples/python-version/worker/main.py) (Python version), and [SampleWorker.cs](https://github.com/pandolia/easy-service/blob/master/src/SampleWorker.cs)。
 
-(2) Download and extract [source and binary of EasyService](https://github.com/pandolia/easy-service/archive/master.zip).
+(2) Open a terminal with administrator, run ***svc create hello-svc** to create a template project directory hello-svc.
 
-(3) Open **svc.conf** , edit configurations:
+(3) Open **hello-svc/svc.conf** , edit configurations:
 
 ```conf
 # service's name, DO NOT conflict with existed services
@@ -47,26 +49,26 @@ OutFileDir: outfiles
 WorkerEncoding: utf8
 ```
 
-(4) Open a terminal with adminstration privilege in the directory which contains **svc.exe**:
+(4) Cd to hello-svc:
 
 a. run ***svc check*** to check configurations
 
 b. run ***svc test-worker*** to test your program (the Worker)
 
-If no errors happen:
+If everything is fine:
 
-c. run ***svc install*** to register and start a system service. Now your program is running in the background, and it will be started automatically after system booting.
-
-You can see all registered services in Service Manage Console (services.msc).
+c. run ***svc install*** to register and start a system service. Now your program is running in the background.
 
 d. run ***svc stop|start|restart|remove*** to stop, start, restart and remove the service.
 
-### Register mutiple services
+e. run ***svc log*** to display output of the service.
 
-To register mutiple services, just create mutiple directories, copy **svc.exe** and **svc.conf** to them, edit configurations, and run **svc check|test-worker|install|...** .
+### Register multiple services
+
+To register multiple services, just run ***svc create your-project-name*** to create multiple template project directories, edit configurations, and run **svc check|test-worker|install|...** .
 
 ### Internal Implementation
 
-Actually, EasyService registers himself (**svc.exe**) as a system service. When this service starts, he reads configurations in **svc.conf** and creates a child process to run the program (the Worker), then monitors the child process and re-creates one if it stops running. When this service stops, he writes data "exit" to the stdin of the child process and wait for it to exit, and terminates the child process if waitting time exceeds 10 seconds.
+Actually, EasyService registers himself (**svc.exe**) as a system service. When this service starts, he reads configurations in **svc.conf** and creates a child process to run the program (the Worker), then monitors the child process and re-creates one if it stops running. When this service stops, he writes data "exit" to the stdin of the child process and wait for it to exit, and terminates the child process if waitting time exceeds 5 seconds.
 
-Source code of EasyService are in [src/main.cs](https://github.com/pandolia/easy-service/blob/master/src/Main.cs) 。
+Source code of EasyService are in [src](https://github.com/pandolia/easy-service/tree/master/src) 。
