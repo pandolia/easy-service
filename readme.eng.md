@@ -55,7 +55,7 @@ a. run ***svc check*** to check configurations
 
 b. run ***svc test-worker*** to test your program (the Worker)
 
-If everything is fine:
+If everything are fine:
 
 c. run ***svc install*** to register and start a system service. Now your program is running in the background.
 
