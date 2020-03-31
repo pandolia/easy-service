@@ -177,17 +177,16 @@ public partial class Program
             return 1;
         }
 
-        var errInfo = "Failed to start the service, please refer to svc.log to see what happened";
-        Libs.NewThread(() => Waiting("Start", errInfo));
+        Console.Write($"Starting...");
+        Libs.NewThread(Waiting);
         sc.StartSvc();
-        Libs.Print($"Started Service \"{sc.ServiceName}\"");
+        Libs.Print($"\nStarted Service \"{sc.ServiceName}\"");
         return 0;
-    }    
+    }
 
-    private static void Waiting(string info, string errInfo)
+    private static void Waiting()
     {
         Thread.Sleep(2000);
-        Console.Write($"{info}ing");
         for (int i = 0; i < 6; i++)
         {
             Thread.Sleep(1500);
@@ -195,7 +194,7 @@ public partial class Program
             Console.Out.Flush();
         }
 
-        Console.Write($"\n{errInfo}\n");
+        Console.Write($"\nFailed to start the service, please refer to svc.log to see what happened\n");
         Environment.Exit(1);
     }
 
@@ -477,7 +476,7 @@ partial class Program
             Log($"[ERROR] Failed to notify Worker to exit, {e.Message}");
             try
             {
-                p.Kill();
+                p.KillTree();
                 Log("[WARN] Worker has been killed");
             }
             catch (Exception ee)
@@ -492,7 +491,7 @@ partial class Program
             Log("[WARN] Worker refused to exit");
             try
             {
-                p.Kill();
+                p.KillTree();
                 Log("[WARN] Worker has been killed");
             }
             catch (Exception ee)

@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Threading;
+using System.Management;
 
 public delegate string FieldSetter(string value);
 
@@ -195,5 +196,33 @@ public static class Libs
     {
         var fileInfo = new FileInfo(filename);
         return fileInfo.Exists ? fileInfo.LastWriteTimeUtc.Ticks : 0;
+    }
+
+    public static void KillTree(this Process root)
+    {
+        var query = $"Select * From Win32_Process Where ParentProcessID={root.Id}";
+        var searcher = new ManagementObjectSearcher(query);
+        var moc = searcher.Get();
+
+        foreach (ManagementObject mo in moc)
+        {
+            var id = Convert.ToInt32(mo["ProcessID"]);
+            var p = Process.GetProcessById(id);
+            if (p == null)
+            {
+                continue;
+            }
+
+            p.KillTree();
+        }
+
+        if (root.HasExited)
+        {
+            return;
+        }
+
+        root.Kill();
+
+        Thread.Sleep(500);
     }
 }
