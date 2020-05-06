@@ -186,8 +186,10 @@ public static class Libs
 
     public static Thread NewThread(Action action)
     {
-        var th = new Thread(() => action());
-        th.IsBackground = true;
+        var th = new Thread(() => action())
+        {
+            IsBackground = true
+        };
         th.Start();
         return th;
     }
@@ -200,29 +202,37 @@ public static class Libs
 
     public static void KillTree(this Process root)
     {
-        var query = $"Select * From Win32_Process Where ParentProcessID={root.Id}";
+        var tree = new List<int>();
+
+        GetTree(root.Id, tree);
+
+        foreach (var id in tree)
+        {
+            var p = Process.GetProcessById(id);
+
+            if (p == null || p.HasExited)
+            {
+                continue;
+            }
+
+            p.Kill();
+
+            Thread.Sleep(500);
+        }
+    }
+
+    private static void GetTree(int rootId, List<int> result)
+    {
+        var query = $"Select * From Win32_Process Where ParentProcessID={rootId}";
         var searcher = new ManagementObjectSearcher(query);
         var moc = searcher.Get();
 
         foreach (ManagementObject mo in moc)
         {
             var id = Convert.ToInt32(mo["ProcessID"]);
-            var p = Process.GetProcessById(id);
-            if (p == null)
-            {
-                continue;
-            }
-
-            p.KillTree();
+            GetTree(id, result);
         }
 
-        if (root.HasExited)
-        {
-            return;
-        }
-
-        root.Kill();
-
-        Thread.Sleep(500);
+        result.Add(rootId);
     }
 }
