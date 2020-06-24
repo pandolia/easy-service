@@ -117,6 +117,10 @@ NSSM 主要缺点是界面和文档都是英文的，对新手也不见得更友
 
 * （5） 增加 WaitSecondsForWorkerToExit 配置项，可设置停止服务时等待工作进程退出的最大时间
 
+### v1.0.2 版
+
+* （1） 修复了 v1.0.1 版中 Win7 系统下服务无法自启动的 Bug ，详见 [Issue-9](https://github.com/pandolia/easy-service/issues/9) 。
+
 ### 典型用例
 
 Appin 网站介绍了用 EasyService 部署 frp 内网穿透服务的方法，请看 [这里](https://www.appinn.com/easyservice-for-windows/) 。
