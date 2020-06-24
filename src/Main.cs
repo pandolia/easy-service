@@ -6,7 +6,7 @@ using System.Threading;
 
 public partial class Program
 {
-    private const string VERSION = "Easy Service: v1.0.1";
+    private const string VERSION = "Easy Service: v1.0.2";
 
     private const string COMMANDS = "create|check|status|test-worker|install|start|stop|restart|remove|log";
 
@@ -194,7 +194,8 @@ public partial class Program
             Console.Out.Flush();
         }
 
-        Console.Write($"\nFailed to start the service, please refer to svc.log to see what happened\n");
+        Console.Write($"\nFailed to start the service, "
+            + $"please refer to svc.log or {Libs.BinDir}?.error.txt to see what happened\n");
         Environment.Exit(1);
     }
 
@@ -261,7 +262,7 @@ public partial class Program
 
 public partial class Program
 {
-    private static void Log(string s, bool append = true)
+    public static void Log(string s, bool append = true)
     {
         if (testMode)
         {
@@ -298,12 +299,7 @@ partial class Program
     {
         if (!testMode)
         {
-            var err = ReadSvcConfigInSvcBin();
-            if (err != null)
-            {
-                Log($"[ERROR] Failed to read configuration for Service \"{conf.ServiceName}\": {err}");
-                Environment.Exit(1);
-            }
+            ReadSvcConfigInSvcBin();
         }
 
         psi = new ProcessStartInfo
@@ -336,15 +332,9 @@ partial class Program
         Log($"[INFO] Started Service \"{conf.ServiceName}\"");
     }
 
-    private static string ReadSvcConfigInSvcBin()
+    private static void ReadSvcConfigInSvcBin()
     {
-        Libs.SetCwd(Libs.BinDir);
-
         var mngObj = SvcUtils.GetServiceManagementObjectInSvcBin();
-        if (mngObj == null)
-        {
-            return "can not get service management object";
-        }        
         
         try
         {
@@ -356,16 +346,15 @@ partial class Program
         }
         catch (Exception ex)
         {
-            return $"can not set cwd from service's description, {ex.Message}";
+            Libs.Abort($"Can not set cwd from service's description, {ex.Message}");
         }
 
         var err = conf.Read();
         if (err != null)
         {
-            return $"configuration error, {err}";
+            Log($"Configuration error, {err}");
+            Environment.Exit(1);
         }
-
-        return null;
     }
 
     private static Process StartWorker()
@@ -561,11 +550,26 @@ class SimpleService : ServiceBase
 {
     protected override void OnStart(string[] args)
     {
-        Program.OnStart();
+        try
+        {
+            Program.OnStart();
+        }
+        catch (Exception ex)
+        {
+            Libs.Abort($"Failed in Program.OnStart:\r\n{ex}");
+        }
     }
 
     protected override void OnStop()
     {
-        Program.OnStop();
+        try
+        {
+            Program.OnStop();
+        }
+        catch (Exception ex)
+        {
+            Program.Log($"An error happened in Program.OnStop:\r\n{ex}");
+            Environment.Exit(1);
+        }
     }
 }

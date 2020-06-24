@@ -11,6 +11,8 @@ public class Conf
 
     public const string LAST_LINE_FILE = "lastline.log";
 
+    public const string NECESSARY_DEPENDENCY = "RpcLocator";
+
     public const int RESTART_WAIT_SECONDS = 5;
 
     public string ServiceName { get; private set; } = null;

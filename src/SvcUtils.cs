@@ -24,14 +24,24 @@ public static class SvcUtils
     {
         int processId = Process.GetCurrentProcess().Id;
         string query = $"SELECT * FROM Win32_Service where ProcessId = {processId}";
-        using (var searcher = new ManagementObjectSearcher(query))
+        
+        try
         {
-            foreach (ManagementObject queryObj in searcher.Get())
+            using (var searcher = new ManagementObjectSearcher(query))
             {
-                return queryObj;
+                foreach (ManagementObject queryObj in searcher.Get())
+                {
+                    return queryObj;
+                }
             }
         }
+        catch (Exception e)
+        {
+            Libs.Abort($"Failed to get service management object:\r\n{e}");
+            return null;
+        }
 
+        Libs.Abort($"Failed to get service management object: no management object");
         return null;
     }
 
@@ -46,8 +56,10 @@ public static class SvcUtils
 
     public static ServiceController CreateSvc(Conf conf)
     {
+        var depend = conf.Dependencies.AddUniq(Conf.NECESSARY_DEPENDENCY, '/');
+
         var scArgs = $"create \"{conf.ServiceName}\" binPath= \"{Libs.BinPath}\" start= auto "
-            + $"DisplayName= \"{conf.DisplayName}\" depend= \"{conf.Dependencies}\"";
+            + $"DisplayName= \"{conf.DisplayName}\" depend= \"{depend}\"";
 
         if (conf.User.Length > 0)
         {

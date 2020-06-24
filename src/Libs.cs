@@ -19,9 +19,46 @@ public static class Libs
         Directory.SetCurrentDirectory(d);
     }
 
+    public static string AddUniq(this string s, string p, char c)
+    {
+        if (s == p || s == "")
+        {
+            return p;
+        }
+
+        if (p == "")
+        {
+            return s;
+        }
+
+        if (s.StartsWith(p + c) || s.EndsWith(c + p) || s.Contains(c + p + c))
+        {
+            return s;
+        }
+
+        return s + c + p;
+
+    }
+
     public static void Print(object s)
     {
         Console.WriteLine(s);
+    }
+
+    public static void Abort(string s)
+    {
+        var pid = Process.GetCurrentProcess().Id;
+        var filename = $"{BinDir}\\{DateTime.Now:yyyy-MM-dd-HH-mm-ss-ffff}-{pid}.error.txt";
+        try
+        {
+            WriteLineToFile(filename, s);
+        }
+        catch (Exception e)
+        {
+            Print(e);
+        }
+
+        Environment.Exit(1);
     }
 
     public static void WriteLineToFile(string file, string s, bool append = false)
