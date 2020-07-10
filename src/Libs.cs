@@ -40,12 +40,7 @@ public static class Libs
 
     }
 
-    public static void Print(object s)
-    {
-        Console.WriteLine(s);
-    }
-
-    public static void Abort(string s)
+    public static void Dump(string s)
     {
         var pid = Process.GetCurrentProcess().Id;
         var filename = $"{BinDir}\\{DateTime.Now:yyyy-MM-dd-HH-mm-ss-ffff}-{pid}.error.txt";
@@ -53,12 +48,10 @@ public static class Libs
         {
             WriteLineToFile(filename, s);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Print(e);
+            Console.WriteLine(ex);
         }
-
-        Environment.Exit(1);
     }
 
     public static void WriteLineToFile(string file, string s, bool append = false)
@@ -85,14 +78,14 @@ public static class Libs
                 p.WaitForExit();
                 if (p.ExitCode != 0)
                 {
-                    Print(p.StandardOutput.ReadToEnd());
+                    Console.WriteLine(p.StandardOutput.ReadToEnd());
                 }
                 return p.ExitCode;
             }
         }
         catch (Exception e)
         {
-            Print(e.Message);
+            Console.WriteLine(e.Message);
             return 1;
         }
     }
@@ -138,7 +131,7 @@ public static class Libs
             var valueErr = setterDict[sKey](value);
             if (valueErr != null)
             {
-                errs.Add($"Bad {key} `{value}`, {valueErr}");
+                errs.Add($"Bad {key} `{value}`: {valueErr}");
             }
 
             items[key] = value;
@@ -159,7 +152,7 @@ public static class Libs
             }
         }
 
-        return errs.Count == 0 ? null : string.Join("\n", errs);
+        return errs.Count == 0 ? null : "    " + string.Join("\r\n    ", errs);
     }
 
     public static string CopyDir(string src, string dest, string ignoreExt)
@@ -237,39 +230,117 @@ public static class Libs
         return fileInfo.Exists ? fileInfo.LastWriteTimeUtc.Ticks : 0;
     }
 
-    public static void KillTree(this Process root)
+    public static string GetName(this Process proc)
     {
-        var tree = new List<int>();
-
-        GetTree(root.Id, tree);
-
-        foreach (var id in tree)
+        if (proc.HasExited)
         {
-            var p = Process.GetProcessById(id);
-
-            if (p == null || p.HasExited)
-            {
-                continue;
-            }
-
-            p.Kill();
-
-            Thread.Sleep(500);
+            return $"Process-{proc.Id}";
         }
+
+        return $"Process-{proc.ProcessName}-{proc.Id}";
     }
 
-    private static void GetTree(int rootId, List<int> result)
+    private static void GetTree(this Process proc, List<Process> result)
     {
-        var query = $"Select * From Win32_Process Where ParentProcessID={rootId}";
+        result.Add(proc);
+
+        var query = $"Select * From Win32_Process Where ParentProcessID={proc.Id}";
         var searcher = new ManagementObjectSearcher(query);
         var moc = searcher.Get();
 
         foreach (ManagementObject mo in moc)
         {
             var id = Convert.ToInt32(mo["ProcessID"]);
-            GetTree(id, result);
+            var p = Process.GetProcessById(id);
+            if (p == null)
+            {
+                continue;
+            }
+
+            p.GetTree(result);
+        }
+    }
+
+    public static List<Process> GetTree(this Process proc)
+    {
+        var tree = new List<Process>();
+        proc.GetTree(tree);
+        return tree;
+    }
+
+    public static void KillTree(this Process proc, Action<string> print)
+    {
+        var tree = proc.GetTree();
+        var n = tree.Count;
+        var names = new string[n];
+
+        for (var i = 0; i < n; i++)
+        {
+            names[i] = tree[i].GetName();
         }
 
-        result.Add(rootId);
+        for (var i = 0; i < n; i++)
+        {
+            var p = tree[i];
+            var name = names[i];
+
+            if (p.HasExited)
+            {
+                print($"{name} has exited already");
+                continue;
+            }
+
+            try
+            {
+                p.Kill();
+                print($"Killed {name}");
+            }
+            catch (Exception ex)
+            {
+                print($"Failed to kill {name}: {ex.Message}");
+            }
+
+            if (i != n - 1)
+            {
+                Thread.Sleep(1000);
+            }
+        }
+    }
+
+    public static string GetData(this DataReceivedEventArgs ev)
+    {
+        string s = ev.Data;
+
+        if (s == null)
+        {
+            return null;
+        }
+
+        int n = s.Length;
+        if (n > 0 && s[n - 1] == '\0')
+        {
+            if (n == 1)
+            {
+                return null;
+            }
+
+            return s.Substring(0, n - 1);
+        }
+
+        return s;
+    }
+
+    public static string ToPrettyString<TVal>(this Dictionary<string, TVal> dict)
+    {
+        var n = dict.Count;
+        var segs = new string[n];
+        var i = 0;
+
+        foreach (var item in dict)
+        {
+            segs[i++] = $"[{item.Key}]=[{item.Value}]";
+        }
+
+        return string.Join(", ", segs);
     }
 }

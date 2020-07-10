@@ -47,10 +47,17 @@ public class Conf
 
     public Encoding WorkerEncodingObj { get; private set; } = null;
 
+    public readonly Dictionary<string, string> Environments
+        = new Dictionary<string, string>();
+
+    public readonly bool ManageMode;
+
     private readonly Dictionary<string, FieldSetter> setterDict;
 
-    public Conf()
+    public Conf(bool manageMode)
     {
+        ManageMode = manageMode;
+
         setterDict = new Dictionary<string, FieldSetter>
         {
             { "setServiceName", SetServiceName },
@@ -58,6 +65,7 @@ public class Conf
             { "setDescription", SetDescription },
             { "setDependencies", SetDependencies },
             { "setWorker", SetWorker },
+            { "setEnvironments", SetEnvironments },
             { "setWorkingDir", SetWorkingDir },
             { "setOutFileDir", SetOutFileDir },
             { "setWaitSecondsForWorkerToExit", SetWaitSecondsForWorkerToExit },
@@ -66,19 +74,22 @@ public class Conf
             { "setUser", SetUser },
             { "setPassword", SetPassword }
         };
-    }
 
-    public string Read()
-    {
         var err = Libs.ReadConfig(CONF_FILE, setterDict);
         if (err != null)
         {
-            return err;
+            if (ManageMode)
+            {
+                Console.WriteLine($"Configuration Error: \r\n{err}");
+                Environment.Exit(1);
+            }
+
+            Abort($"Configuration Error: \r\n{err}");
         }
 
         WorkingDir = Path.GetFullPath(WorkingDir);
-        OutFileDir = Path.GetFullPath(OutFileDir);
-        LastLineFile = Path.Combine(OutFileDir, LAST_LINE_FILE);
+        OutFileDir = OutFileDir != null ? Path.GetFullPath(OutFileDir) : null;
+        LastLineFile = OutFileDir != null ? Path.Combine(OutFileDir, LAST_LINE_FILE) : null;
 
         var suffixes = new string[] { "", ".exe", ".bat" };
         foreach (var suffix in suffixes)
@@ -95,26 +106,25 @@ public class Conf
                 break;
             }
         }
-
-        return null;
     }
 
     public void ShowConfig()
     {
-        Libs.Print($"ServiceName: {ServiceName}");
-        Libs.Print($"DisplayName: {DisplayName}"); 
-        Libs.Print($"Description: {Description}");
-        Libs.Print($"Dependencies: {Dependencies}");
-        Libs.Print($"Worker: {Worker}");
-        Libs.Print($"Worker's fileName: {WorkerFileName}");
-        Libs.Print($"Worker's arguments: {WorkerArguments}"); 
-        Libs.Print($"WorkingDir: {WorkingDir}");
-        Libs.Print($"OutFileDir: {OutFileDir}");
-        Libs.Print($"WaitSecondsForWorkerToExit: {WaitSecondsForWorkerToExit}");
-        Libs.Print($"WorkerEncoding: {WorkerEncoding}");
-        Libs.Print($"Domain: {Domain}");
-        Libs.Print($"User: {User}");
-        Libs.Print($"Password: {Password}");
+        Console.WriteLine($"ServiceName: {ServiceName}");
+        Console.WriteLine($"DisplayName: {DisplayName}"); 
+        Console.WriteLine($"Description: {Description}");
+        Console.WriteLine($"Dependencies: {Dependencies}");
+        Console.WriteLine($"Worker: {Worker}");
+        Console.WriteLine($"Worker's fileName: {WorkerFileName}");
+        Console.WriteLine($"Worker's arguments: {WorkerArguments}");
+        Console.WriteLine($"Worker's enrinonments: {Environments.ToPrettyString()}");
+        Console.WriteLine($"WorkingDir: {WorkingDir}");
+        Console.WriteLine($"OutFileDir: {OutFileDir}");
+        Console.WriteLine($"WaitSecondsForWorkerToExit: {WaitSecondsForWorkerToExit}");
+        Console.WriteLine($"WorkerEncoding: {WorkerEncoding}");
+        Console.WriteLine($"Domain: {Domain}");
+        Console.WriteLine($"User: {User}");
+        Console.WriteLine($"Password: {Password}");
     }
 
     public string SetServiceName(string value)
@@ -210,6 +220,34 @@ public class Conf
         return null;
     }
 
+    public string SetEnvironments(string value)
+    {
+        foreach (var seg0 in value.Split(','))
+        {
+            var seg = seg0.Trim();
+            var n = seg.Length;
+
+            if (n == 0)
+            {
+                continue;
+            }
+
+            var i = seg.IndexOf('=');
+
+            if (i == -1 || i == 0)
+            {
+                return "bad format";
+            }
+
+            var key = seg.Substring(0, i).TrimEnd();
+            var val = (i == n - 1) ? "" : seg.Substring(i + 1, n - i - 1).TrimStart();
+
+            Environments[key] = val;
+        }
+
+        return null;
+    }
+
     public string SetWorkingDir(string value)
     {
         WorkingDir = value;
@@ -223,6 +261,12 @@ public class Conf
 
     public string SetOutFileDir(string value)
     {
+        if (value == "$NULL")
+        {
+            OutFileDir = null;
+            return null;
+        }
+
         OutFileDir = value;
         if (!Directory.Exists(OutFileDir))
         {
@@ -309,5 +353,52 @@ public class Conf
         }
 
         return null;
+    }
+
+    public void LogFile(string level, string s, bool append = true)
+    {
+        s = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] {s}";
+
+        try
+        {
+            Libs.WriteLineToFile(LOG_FILE, s, append);
+        }
+        catch (Exception e)
+        {
+            Libs.Dump(e.Message);
+        }
+    }
+
+    private void Log(string level, string s)
+    {
+
+        if (ManageMode)
+        {
+            Console.WriteLine($"[svc.{level.ToLower()}] {s}");
+            return;
+        }
+
+        LogFile(level, s);
+    }
+
+    public void Info(string msg)
+    {
+        Log("INFO", msg);
+    }
+
+    public void Warn(string msg)
+    {
+        Log("WARN", msg);
+    }
+
+    public void Error(string msg)
+    {
+        Log("ERROR", msg);
+    }
+
+    public void Abort(string msg)
+    {
+        Log("CRITICAL", msg);
+        Environment.Exit(1);
     }
 }

@@ -24,6 +24,7 @@
     <Compile Include="Libs.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="SvcUtils.cs" />
+    <Compile Include="Worker.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

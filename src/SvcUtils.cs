@@ -3,7 +3,6 @@ using System.IO;
 using System.ServiceProcess;
 using System.Management;
 using System;
-using System.Threading;
 
 public static class SvcUtils
 {
@@ -20,29 +19,19 @@ public static class SvcUtils
         return null;
     }
 
-    public static ManagementObject GetServiceManagementObjectInSvcBin()
+    public static string GetServiceDescriptionInSvcBin()
     {
         int processId = Process.GetCurrentProcess().Id;
         string query = $"SELECT * FROM Win32_Service where ProcessId = {processId}";
-        
-        try
+        using (var searcher = new ManagementObjectSearcher(query))
         {
-            using (var searcher = new ManagementObjectSearcher(query))
+            foreach (ManagementObject queryObj in searcher.Get())
             {
-                foreach (ManagementObject queryObj in searcher.Get())
-                {
-                    return queryObj;
-                }
+                return queryObj["Description"].ToString();
             }
         }
-        catch (Exception e)
-        {
-            Libs.Abort($"Failed to get service management object:\r\n{e}");
-            return null;
-        }
 
-        Libs.Abort($"Failed to get service management object: no management object");
-        return null;
+        throw new Exception("Can't get the service management object");
     }
 
     public static ManagementObject GetServiceManagementObjectByName(string name)

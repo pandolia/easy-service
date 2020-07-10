@@ -39,10 +39,14 @@ ServiceName: my-service
 # 需要运行的可执行程序及命令行参数
 Worker: node index.js
 
+# 传递给程序的环境变量，如果没有，请设为空
+Environments: TEST-ENV1=A1,TEST-ENV2=A2,TEST-ENV3=A3
+
 # 程序运行的工作目录，请确保该目录已存在
 WorkingDir: worker
 
 # 输出目录，程序运行过程的输出将会写到这个目录下面，请确保该目录已存在
+# 如果不想保存 Worker 的输出，请设为 $NULL
 OutFileDir: outfiles
 
 # 程序输出的编码，如果不确定，请设为空
@@ -120,6 +124,16 @@ NSSM 主要缺点是界面和文档都是英文的，对新手也不见得更友
 ### v1.0.2 版
 
 * （1） 修复了 v1.0.1 版中 Win7 系统下服务无法自启动的 Bug ，详见 [Issue-9](https://github.com/pandolia/easy-service/issues/9) 。
+
+### v1.0.3 版
+
+* （1） 优化 Process.KillTree 功能，在 Worker 有多级后代进程的时候可以保证服务停止时将 Worker 及其所有后代进程全部终止。
+
+* （2） 优化代码架构，优化日志内容。
+
+* （3） 增加功能： 当 OutFileDir 为 ***"$NULL"*** 时，不保存 Worker 的输出。
+
+* （4） 增加配置项 ***Environments*** ： 用于向 Worker 传递环境变量
 
 ### 典型用例
 
