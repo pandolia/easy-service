@@ -147,35 +147,7 @@ public class Worker
 
         lock (OutLock)
         {
-            if (Conf.ManageMode)
-            {
-                Console.WriteLine(s);
-                return;
-            }
-
-            if (Conf.OutFileDir == null)
-            {
-                return;
-            }
-
-            var outFile = Path.Combine(Conf.OutFileDir, $"{DateTime.Now:yyyy-MM-dd}.log");
-            try
-            {
-                Libs.WriteLineToFile(outFile, s, true);
-            }
-            catch (Exception ex)
-            {
-                Conf.Error($"Failed to write Worker's output to `{outFile}`: {ex.Message}");
-            }
-
-            try
-            {
-                Libs.WriteLineToFile(Conf.LastLineFile, s, false);
-            }
-            catch (Exception e)
-            {
-                Conf.Error($"Failed to write Worker's output to `{Conf.LastLineFile}`: {e.Message}");
-            }
+            Conf.WriteOutput(s);
         }
     }
 }

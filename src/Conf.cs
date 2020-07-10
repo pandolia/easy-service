@@ -47,18 +47,15 @@ public class Conf
 
     public Encoding WorkerEncodingObj { get; private set; } = null;
 
-    public readonly Dictionary<string, string> Environments
-        = new Dictionary<string, string>();
+    public readonly Dictionary<string, string> Environments = new Dictionary<string, string>();
 
     public readonly bool ManageMode;
-
-    private readonly Dictionary<string, FieldSetter> setterDict;
 
     public Conf(bool manageMode)
     {
         ManageMode = manageMode;
 
-        setterDict = new Dictionary<string, FieldSetter>
+        var setterDict = new Dictionary<string, FieldSetter>
         {
             { "setServiceName", SetServiceName },
             { "setDisplayName", SetDisplayName },
@@ -371,7 +368,6 @@ public class Conf
 
     private void Log(string level, string s)
     {
-
         if (ManageMode)
         {
             Console.WriteLine($"[svc.{level.ToLower()}] {s}");
@@ -400,5 +396,38 @@ public class Conf
     {
         Log("CRITICAL", msg);
         Environment.Exit(1);
+    }
+
+    public void WriteOutput(string data)
+    {
+        if (ManageMode)
+        {
+            Console.WriteLine(data);
+            return;
+        }
+
+        if (OutFileDir == null)
+        {
+            return;
+        }
+
+        var outFile = Path.Combine(OutFileDir, $"{DateTime.Now:yyyy-MM-dd}.log");
+        try
+        {
+            Libs.WriteLineToFile(outFile, data, true);
+        }
+        catch (Exception ex)
+        {
+            Error($"Failed to write Worker's output to `{outFile}`: {ex.Message}");
+        }
+
+        try
+        {
+            Libs.WriteLineToFile(LastLineFile, data, false);
+        }
+        catch (Exception e)
+        {
+            Error($"Failed to write Worker's output to `{LastLineFile}`: {e.Message}");
+        }
     }
 }
