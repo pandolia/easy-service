@@ -131,9 +131,9 @@ NSSM 主要缺点是界面和文档都是英文的，对新手也不见得更友
 
 * （2） 优化代码架构，优化日志内容。
 
-* （3） 增加功能： 当 OutFileDir 为 ***"$NULL"*** 时，不保存 Worker 的输出。
+* （3） 增加功能： 当 OutFileDir 为 **$NULL** 时，不保存 Worker 的输出。
 
-* （4） 增加配置项 ***Environments*** ： 用于向 Worker 传递环境变量
+* （4） 增加配置项 **Environments** ： 用于向 Worker 传递环境变量
 
 ### 典型用例
 
