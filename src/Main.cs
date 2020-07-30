@@ -2,9 +2,6 @@
 using System.IO;
 using System.ServiceProcess;
 
-// TODO modify readme
-// TODO create release
-
 public class Program
 {
     private const string VERSION = "Easy Service: v1.0.4";
