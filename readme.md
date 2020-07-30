@@ -78,15 +78,15 @@ e. 运行 ***svc log*** 查看正在运行的服务程序的输出
 
 以下命令可以操作 EasyService 服务（用 svc 命令注册的服务），这些命令可在任意位置运行，不需要 cd 到 svc.conf 所在的目录：
 
-* ***svc list|ls *** 列出所有服务
+* ***svc list|ls*** 列出所有服务
 
-* ***svc start|stop|remove all *** 启动、停止或删除所有服务
+* ***svc start|stop|remove all*** 启动、停止或删除所有服务
 
-* ***svc check|status|test-worker|install|start|stop|restart|remove|log $project-directory *** 操作 $project-directory 目录下 svc.conf 指定的服务， $project-directory 中必须含有字符 \\ 或 / 。
+* ***svc check|status|test-worker|install|start|stop|restart|remove|log $project-directory*** 操作 $project-directory 目录下 svc.conf 指定的服务， $project-directory 中必须含有字符 \\ 或 / 。
 
-* ***svc start|stop|restart|remove|log $service-name *** 操作名称为 $service-name 的服务
+* ***svc start|stop|restart|remove|log $service-name*** 操作名称为 $service-name 的服务
 
-* ***svc start|stop|restart|remove|log $service-index *** 操作第 $service-index 个服务，运行 svc ls 可查看所有服务的序号。
+* ***svc start|stop|restart|remove|log $service-index*** 操作第 $service-index 个服务，运行 svc ls 可查看所有服务的序号。
 
 ### 注意事项
 
