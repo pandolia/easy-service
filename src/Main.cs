@@ -1,346 +1,247 @@
 ﻿using System;
 using System.IO;
 using System.ServiceProcess;
-using System.Threading;
 
-public partial class Program
+// TODO modify readme
+// TODO create release
+
+public class Program
 {
-    private const string VERSION = "Easy Service: v1.0.3";
+    private const string VERSION = "Easy Service: v1.0.4";
 
-    private const string COMMANDS = "create|check|status|test-worker|install|stop|start|restart|remove|log";
-
-    private const string USAGE = 
-        "Usage: svc version|-v|--version\r\n" +
-        "       svc create $project_name\r\n" +
-        "       svc check|status\r\n" +
-        "       svc test-worker\r\n" +
-        "       svc install|stop|start|restart|remove|log";
-
-    private static Conf Conf = null;
-
-    private static string Op = null;
-
-    private static string Arg1 = null;
-
-    private static ServiceController Sc = null;
-
-    private static string Status = null;
-
-    private static void Abort(string msg)
-    {
-        Console.WriteLine(msg);
-        Environment.Exit(1);
-    }
-
-    private static void Exit(string msg)
-    {
-        Console.WriteLine(msg);
-        Environment.Exit(0);
-    }
-
-    private static void CheckStage0(string[] args)
-    {
-        Op = args[0];
-
-        if (args.Length == 2)
-        {
-            Arg1 = args[1];
-        }
-
-        if (Op == "version" || Op == "--version" || Op == "-v")
-        {
-            Exit(VERSION);
-        }
-
-        if (!COMMANDS.Split('|').Contains(Op)
-            || (Op == "create" && args.Length != 2)
-            || (Op == "test-worker" && args.Length > 2)
-            || (Op != "create" && Op != "test-worker" && args.Length != 1))
-        {
-            Abort(USAGE);
-        }
-    }
-
-    private static void CheckStage1()
-    {
-        if (Op == "create")
-        {
-            CreateProject();
-        }
-
-        Conf = new Conf(true);
-
-        if (Op == "test-worker")
-        {
-            TestWorker();
-        }
-
-        Sc = SvcUtils.GetServiceController(Conf.ServiceName);
-        Status = (Sc == null) ? "not installed" : Sc.Status.ToString().ToLower();
-
-        if (Op == "check" || Op == "status")
-        {
-            Conf.ShowConfig();
-            Exit($"\r\nService status: {Status}");
-        }
-
-        if (Op == "install" && Sc != null)
-        {
-            Abort($"Service \"{Conf.ServiceName}\" is already installed!");
-        }
-
-        if (Op != "install" && Sc == null)
-        {
-            Abort($"Service \"{Conf.ServiceName}\" is not installed!");
-        }
-
-        if (Op == "log" && Status != "running")
-        {
-            Abort($"Service \"{Conf.ServiceName}\" is not running");
-        }
-    }
+    private const string USAGE =
+        "Usage:\r\n" +
+        "    svc version|-v|--version\r\n" +
+        "    svc create $project-name\r\n" +
+        "    svc check|status [$project-directory]\r\n" +
+        "    svc test-worker [$project-directory]\r\n" +
+        "    svc install [$project-directory]\r\n" +
+        "    svc stop|start|remove [$project-directory|$service-name|$service-index|all]\r\n" +
+        "    svc restart|log [$project-directory|$service-name|$service-index]\r\n" +
+        "    svc list|ls\r\n" +
+        "\r\n" +
+        "Note: $project-directory must contain '\\' or '/'\r\n" +
+        "\r\n" +
+        "Documentation:\r\n" +
+        "    https://github.com/pandolia/easy-service";
 
     public static int Main(string[] args)
     {
         if (args.Length == 0)
         {
-            ServiceBase.Run(new SimpleService());
+            SimpleService.RunService();
             return 0;
         }
 
-        CheckStage0(args);
+        var op = args[0];
+        var opr = $"|{op}|";
+        var argc = args.Length - 1;
+        var arg1 = argc == 1 ? args[1] : null;
 
-        CheckStage1();
-
-        if (Op == "install")
+        if (op == "version" || op == "--version" || op == "-v")
         {
-            InstallService();
+            if (argc != 0)
+            {
+                Libs.Abort(USAGE);
+            }
+
+            Console.WriteLine(VERSION);
+            return 0;
         }
 
-        if (Op == "start")
+        if (op == "create")
         {
-            StartService();
+            if (argc != 1)
+            {
+                Libs.Abort(USAGE);
+            }
+
+            CreateProject(arg1);
+            return 0;
         }
 
-        if (Op == "stop")
+        if (op == "list" || op == "ls")
         {
-            StopService();
+            if (argc != 0)
+            {
+                Libs.Abort(USAGE);
+            }
+
+            SvcUtils.ListAllEasyServices();
+            return 0;
         }
 
-        if (Op == "restart")
+        var commands = "|check|status|test-worker|install|stop|start|remove|restart|log|";
+
+        if (!commands.Contains(opr) || argc > 1)
         {
-            RestartService();
+            Libs.Abort(USAGE);
         }
 
-        if (Op == "remove")
+        if (arg1 != null && (arg1.Contains('/') || arg1.Contains('\\')))
         {
-            RemoveService();
+            if (!Directory.Exists(arg1))
+            {
+                Libs.Abort($"Directory \"{arg1}\" not exists");
+            }
+
+            Libs.SetCwd(arg1);
+            arg1 = null;
         }
 
-        // Op == "log"
-        LoggingSvc();
+        if (op == "test-worker")
+        {
+            if (arg1 != null && arg1 != "--popup")
+            {
+                Libs.Abort($"Directory argument \"{arg1}\" should contain '/' or '\\'");
+            }
+
+            TestWorker(arg1 == "--popup");
+            return 0;
+        }
+
+        if ("|check|status|install|".Contains(opr) && arg1 != null)
+        {
+            Libs.Abort($"Directory argument \"{arg1}\" should contain '/' or '\\'");
+        }
+
+        if ("|restart|log|".Contains(opr) && arg1 == "all")
+        {
+            Libs.Abort(USAGE);
+        }
+
+        if (arg1 == null)
+        {
+            ManageOneByConfFile(op);
+        }
+        else if (arg1 != "all")
+        {
+            ManageOneBySvrIdentity(op, arg1);
+        }
+        else
+        {
+            SvcUtils.ManageAll(op);
+        }
 
         return 0;
     }
 
-    private static void CreateProject()
+    private static void ManageOneByConfFile(string op)
     {
-        var err = Libs.CopyDir($"{Libs.BinDir}..\\samples\\csharp-version", Arg1, ".log");
-        if (err != null)
+        var conf = new Conf();
+        var serviceName = conf.ServiceName;
+        var sc = SvcUtils.GetServiceController(serviceName);
+        var status = (sc == null) ? "not installed" : sc.Status.ToString().ToLower();
+
+        if (op == "check" || op == "status")
         {
-            Abort(err);
+            conf.ShowConfig();
+            Console.WriteLine($"\r\nService status: {status}");
+            return;
         }
 
-        Exit($"Create an Easy-Service project in {Arg1}");
+        if (op == "install")
+        {
+            if (sc != null)
+            {
+                Libs.Abort($"Service \"{serviceName}\" is already installed!");
+            }
+
+            SvcUtils.InstallService(conf);
+            return;
+        }
+
+        if (op == "log")
+        {
+            LoggingSvc(conf, status);
+            return;
+        }
+
+        // op: start|stop|restart|remove
+
+        if (sc == null)
+        {
+            Libs.Abort($"Service \"{serviceName}\" is not installed!");
+        }
+
+        sc.Operate(op);
     }
 
-    private static void TestWorker()
+    private static void ManageOneBySvrIdentity(string op, string arg1)
     {
-        var worker = new Worker(Conf, Arg1 != "--popup");
+        var info = SvcUtils.GetEasyService(arg1);
+        var sc = info.Sc;
+
+        info.Cd();
+
+        if (op == "log")
+        {
+            var conf = new Conf();
+            var status = sc.Status.ToString().ToLower();
+            LoggingSvc(conf, status);
+            return;
+        }
+
+        // op = start|stop|restart|remove
+        sc.Operate(op);
+    }
+
+    private static void CreateProject(string arg1)
+    {
+        var err = Conf.CheckServiceName(arg1);
+        if (err != null)
+        {
+            Libs.Abort($"[svc.critical] Bad project name `{arg1}`: {err}");
+        }
+
+        Libs.CopyDir($"{Libs.BinDir}..\\samples\\csharp-version", arg1, ".log");
+        Libs.ReplaceStringInFile($"{arg1}\\svc.conf", "easy-service", arg1);
+        Console.WriteLine($"Create an Easy-Service project in {arg1}");
+    }
+
+    private static void TestWorker(bool popup)
+    {
+        var worker = new Worker(null, popup);
         worker.Start();
         Console.ReadLine();
         worker.Stop();
-        Environment.Exit(0);
     }
 
-    private static void InstallService()
+    private static void LoggingSvc(Conf conf, string status)
     {
-        if ((Sc = SvcUtils.CreateSvc(Conf)) == null)
+        if (status != "running")
         {
-            Abort($"Failed to install Service \"{Conf.ServiceName}\"");
+            Libs.Abort($"Service \"{conf.ServiceName}\" is not running");
         }
 
-        var ss = $"Installed Service \"{Conf.ServiceName}\"";
-        Console.WriteLine(ss);
-        Conf.LogFile("INFO", ss, false);
-        Conf.LogFile("INFO", "");
-
-        var err = SvcUtils.SetSvcDescription(Conf);
-        if (err != null)
+        if (conf.OutFileDir == null)
         {
-            err = $"Failed to set description for Service \"{Conf.ServiceName}\": {err}";
-            Conf.LogFile("ERROR", err);
-            Abort($"{err}\r\nPlease run `svc remove` to remove the Service");
+            Libs.Abort("Error: OutFileDir must not be $NULL");
         }
 
-        StartService();
-    }
-
-    private static void StartService()
-    {
-        if (Sc.Status == ServiceControllerStatus.Running)
-        {
-            Abort($"Service \"{Sc.ServiceName}\" is already started");
-        }
-
-        Console.Write($"Starting...");
-        Libs.NewThread(() => Waiting("start"));
-        Sc.StartSvc();
-        Exit($"\r\nStarted Service \"{Sc.ServiceName}\"");
-    }
-
-    private static void Waiting(string action)
-    {
-        Thread.Sleep(2000);
-        for (int i = 0; i < 6; i++)
-        {
-            Thread.Sleep(1500);
-            Console.Write(".");
-            Console.Out.Flush();
-        }
-
-        Abort($"\r\nFailed to {action} the service, "
-            + $"please refer to svc.log or {Libs.BinDir}*.error.txt to see what happened");
-    }
-
-    private static int stopService()
-    {
-        if (Sc.Status == ServiceControllerStatus.Stopped)
-        {
-            Console.WriteLine($"Service \"{Sc.ServiceName}\" is already stopped");
-            return 1;
-        }
-
-        Console.Write($"Stopping...");
-        Libs.NewThread(() => Waiting("stop"));
-        Sc.StopSvc();
-        Console.WriteLine($"\r\nStopped Service \"{Sc.ServiceName}\"");
-        return 0;
-    }
-
-    private static void StopService()
-    {
-        Environment.Exit(stopService());
-    }
-
-    private static void RestartService()
-    {
-        stopService();
-        StartService();
-    }
-
-    private static void RemoveService()
-    {
-        stopService();
-
-        if (!SvcUtils.DeleteSvc(Conf.ServiceName))
-        {
-            Abort($"Failed to remove Service \"{Conf.ServiceName}\"");
-        }
-
-        var ss = $"Removed Service \"{Conf.ServiceName}\"";
-        Conf.LogFile("INFO", "");
-        Conf.LogFile("INFO", ss);
-        Exit(ss);
-    }
-
-    private static void loggingSvc()
-    {
-        long prev = 0;
-        while (true)
-        {
-            Thread.Sleep(200);
-
-            var lastWrite = Libs.LastWriteTime(Conf.LastLineFile);
-
-            if (lastWrite == 0 || lastWrite == prev)
-            {
-                continue;
-            }
-
-            try
-            {
-                using (var sr = new StreamReader(Conf.LastLineFile))
-                {
-                    Console.Write(sr.ReadToEnd());
-                }
-            }
-            catch (Exception)
-            {
-                continue;
-            }
-
-            Console.Out.Flush();
-            prev = lastWrite;
-        }
-    }
-
-    private static void LoggingSvc()
-    {
-        if (Conf.OutFileDir == null)
-        {
-            Abort("Error: OutFileDir must not be $NULL");
-        }
-
-        Libs.NewThread(loggingSvc);
+        Libs.NewThread(() => Libs.MonitorFile(conf.LastLineFile));
         Console.ReadLine();
     }
 }
 
 class SimpleService : ServiceBase
 {
-    private Conf Conf = null;
+    public static void RunService()
+    {
+        Run(new SimpleService());
+    }
 
     private Worker Worker = null;
 
     protected override void OnStart(string[] args)
     {
-        try
-        {
-            var svcDescription = SvcUtils.GetServiceDescriptionInSvcBin();
-            var i = svcDescription.LastIndexOf('<') + 1;
-            var n = svcDescription.Length - 1 - i;
-            var cwd = svcDescription.Substring(i, n);
-            Libs.SetCwd(cwd);
-        }
-        catch (Exception ex)
-        {
-            Libs.Dump($"Failed to set cwd from service's description:\r\n{ex}");
-            Environment.Exit(1);
-        }
-
-        Conf = new Conf(false);
-
-        try
-        {
-            Worker = new Worker(Conf, true);
-            Worker.Start();
-        }
-        catch (Exception ex)
-        {
-            Conf.Abort($"Failed to start the worker:\r\n{ex}");
-        }
+        SvcUtils.SetCwdInSvcBin();
+        Worker = new Worker(SvcUtils.AddLog);
+        Worker.Start();
     }
 
     protected override void OnStop()
     {
-        try
-        {
-            Worker.Stop();
-        }
-        catch (Exception ex)
-        {
-            Conf.Abort($"Failed to stop the worker:\r\n{ex}");
-        }
+        Worker.Stop();
     }
 }

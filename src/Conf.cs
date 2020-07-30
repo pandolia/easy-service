@@ -5,16 +5,6 @@ using System.Collections.Generic;
 
 public class Conf
 {
-    public const string CONF_FILE = "svc.conf";
-
-    public const string LOG_FILE = "svc.log";
-
-    public const string LAST_LINE_FILE = "lastline.log";
-
-    public const string NECESSARY_DEPENDENCY = "RpcLocator";
-
-    public const int RESTART_WAIT_SECONDS = 5;
-
     public string ServiceName { get; private set; } = null;
 
     public string DisplayName { get; private set; } = null;
@@ -29,9 +19,11 @@ public class Conf
 
     public string OutFileDir { get; private set; } = null;
 
-    public int WaitSecondsForWorkerToExit { get; private set; } = 10;
+    public int WaitSecondsForWorkerToExit { get; private set; } = 0;
 
     public string WorkerEncoding { get; private set; } = null;
+
+    public int WorkerMemoryLimit { get; private set; } = -1;
 
     public string Domain { get; private set; } = null;
 
@@ -49,13 +41,9 @@ public class Conf
 
     public readonly Dictionary<string, string> Environments = new Dictionary<string, string>();
 
-    public readonly bool ManageMode;
-
-    public Conf(bool manageMode)
+    public Conf(Action<string> abort = null)
     {
-        ManageMode = manageMode;
-
-        var setterDict = new Dictionary<string, FieldSetter>
+        var setterDict = new Dictionary<string, Func<string, string>>
         {
             { "setServiceName", SetServiceName },
             { "setDisplayName", SetDisplayName },
@@ -67,26 +55,27 @@ public class Conf
             { "setOutFileDir", SetOutFileDir },
             { "setWaitSecondsForWorkerToExit", SetWaitSecondsForWorkerToExit },
             { "setWorkerEncoding", SetWorkerEncoding },
+            { "setWorkerMemoryLimit", SetWorkerMemoryLimit },
             { "setDomain", SetDomain },
             { "setUser", SetUser },
             { "setPassword", SetPassword }
         };
 
-        var err = Libs.ReadConfig(CONF_FILE, setterDict);
+        var err = Libs.ReadConfig(Consts.CONF_FILE, setterDict);
         if (err != null)
         {
-            if (ManageMode)
-            {
-                Console.WriteLine($"Configuration Error: \r\n{err}");
-                Environment.Exit(1);
-            }
-
-            Abort($"Configuration Error: \r\n{err}");
+            abort = abort ?? Libs.Abort;
+            abort($"Configuration Error: {err}");
         }
 
+        ResolvePaths();
+    }
+
+    private void ResolvePaths()
+    {
         WorkingDir = Path.GetFullPath(WorkingDir);
         OutFileDir = OutFileDir != null ? Path.GetFullPath(OutFileDir) : null;
-        LastLineFile = OutFileDir != null ? Path.Combine(OutFileDir, LAST_LINE_FILE) : null;
+        LastLineFile = OutFileDir != null ? Path.Combine(OutFileDir, Consts.LAST_LINE_FILE) : null;
 
         var suffixes = new string[] { "", ".exe", ".bat" };
         foreach (var suffix in suffixes)
@@ -119,29 +108,49 @@ public class Conf
         Console.WriteLine($"OutFileDir: {OutFileDir}");
         Console.WriteLine($"WaitSecondsForWorkerToExit: {WaitSecondsForWorkerToExit}");
         Console.WriteLine($"WorkerEncoding: {WorkerEncoding}");
+        Console.WriteLine($"WorkerMemoryLimit: {WorkerMemoryLimit}");
         Console.WriteLine($"Domain: {Domain}");
         Console.WriteLine($"User: {User}");
         Console.WriteLine($"Password: {Password}");
     }
 
-    public string SetServiceName(string value)
+    public static string CheckServiceName(string name)
     {
-        ServiceName = value;
-
-        if (ServiceName.Length == 0)
+        if (name.Length == 0)
         {
             return "empty";
         }
 
-        if (ServiceName.Contains("\""))
+        if (name.Contains('"'))
         {
             return "contains '\"'";
+        }
+
+        if (name.Contains('\\') || name.Contains('/'))
+        {
+            return "contains '\\' or '/'";
+        }
+
+        if (name.Contains('[') || name.Contains(']'))
+        {
+            return "contains '[' or ']'";
+        }
+
+        if (name.IsDigit())
+        {
+            return "is digit";
         }
 
         return null;
     }
 
-    public string SetDisplayName(string value)
+    private string SetServiceName(string value)
+    {
+        ServiceName = value;
+        return CheckServiceName(value);
+    }
+
+    private string SetDisplayName(string value)
     {
         DisplayName = value;
 
@@ -151,9 +160,9 @@ public class Conf
         }
 
         return null;
-    }    
+    }
 
-    public string SetDescription(string value)
+    private string SetDescription(string value)
     {
         Description = value;
 
@@ -165,7 +174,7 @@ public class Conf
         return null;
     }
 
-    public string SetDependencies(string value)
+    private string SetDependencies(string value)
     {
         Dependencies = value.Replace(',', '/');
 
@@ -177,7 +186,7 @@ public class Conf
         return null;
     }
 
-    public string SetWorker(string value)
+    private string SetWorker(string value)
     {
         Worker = value;
 
@@ -217,7 +226,7 @@ public class Conf
         return null;
     }
 
-    public string SetEnvironments(string value)
+    private string SetEnvironments(string value)
     {
         foreach (var seg0 in value.Split(','))
         {
@@ -245,7 +254,7 @@ public class Conf
         return null;
     }
 
-    public string SetWorkingDir(string value)
+    private string SetWorkingDir(string value)
     {
         WorkingDir = value;
         if (!Directory.Exists(WorkingDir))
@@ -256,7 +265,7 @@ public class Conf
         return null;
     }
 
-    public string SetOutFileDir(string value)
+    private string SetOutFileDir(string value)
     {
         if (value == "$NULL")
         {
@@ -273,11 +282,15 @@ public class Conf
         return null;
     }
 
-    public string SetWaitSecondsForWorkerToExit(string value)
+    private string SetWaitSecondsForWorkerToExit(string value)
     {
-        int val;
+        if (value == "")
+        {
+            WaitSecondsForWorkerToExit = 0;
+            return null;
+        }
 
-        if (!int.TryParse(value, out val) || val < 0 || val > 300)
+        if (!int.TryParse(value, out int val) || val < 0 || val > 300)
         {
             return "should be a number between 0 ~ 300";
         }
@@ -286,7 +299,7 @@ public class Conf
         return null;
     }
 
-    public string SetWorkerEncoding(string value)
+    private string SetWorkerEncoding(string value)
     {
         WorkerEncoding = value;
 
@@ -316,7 +329,24 @@ public class Conf
         return null;
     }
 
-    public string SetDomain(string value)
+    private string SetWorkerMemoryLimit(string value)
+    {
+        if (value == "")
+        {
+            WorkerMemoryLimit = -1;
+            return null;
+        }
+
+        if (!int.TryParse(value, out int val) || val < 1 || val > 5000000)
+        {
+            return "should be a number between 1 ~ 5000000";
+        }
+
+        WorkerMemoryLimit = val;
+        return null;
+    }
+
+    private string SetDomain(string value)
     {
         Domain = value;
 
@@ -328,7 +358,7 @@ public class Conf
         return null;
     }
 
-    public string SetUser(string value)
+    private string SetUser(string value)
     {
         User = value;
 
@@ -340,7 +370,7 @@ public class Conf
         return null;
     }
 
-    public string SetPassword(string value)
+    private string SetPassword(string value)
     {
         Password = value;
 
@@ -350,84 +380,5 @@ public class Conf
         }
 
         return null;
-    }
-
-    public void LogFile(string level, string s, bool append = true)
-    {
-        s = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] {s}";
-
-        try
-        {
-            Libs.WriteLineToFile(LOG_FILE, s, append);
-        }
-        catch (Exception e)
-        {
-            Libs.Dump(e.Message);
-        }
-    }
-
-    private void Log(string level, string s)
-    {
-        if (ManageMode)
-        {
-            Console.WriteLine($"[svc.{level.ToLower()}] {s}");
-            return;
-        }
-
-        LogFile(level, s);
-    }
-
-    public void Info(string msg)
-    {
-        Log("INFO", msg);
-    }
-
-    public void Warn(string msg)
-    {
-        Log("WARN", msg);
-    }
-
-    public void Error(string msg)
-    {
-        Log("ERROR", msg);
-    }
-
-    public void Abort(string msg)
-    {
-        Log("CRITICAL", msg);
-        Environment.Exit(1);
-    }
-
-    public void WriteOutput(string data)
-    {
-        if (ManageMode)
-        {
-            Console.WriteLine(data);
-            return;
-        }
-
-        if (OutFileDir == null)
-        {
-            return;
-        }
-
-        var outFile = Path.Combine(OutFileDir, $"{DateTime.Now:yyyy-MM-dd}.log");
-        try
-        {
-            Libs.WriteLineToFile(outFile, data, true);
-        }
-        catch (Exception ex)
-        {
-            Error($"Failed to write Worker's output to `{outFile}`: {ex.Message}");
-        }
-
-        try
-        {
-            Libs.WriteLineToFile(LastLineFile, data, false);
-        }
-        catch (Exception e)
-        {
-            Error($"Failed to write Worker's output to `{LastLineFile}`: {e.Message}");
-        }
     }
 }

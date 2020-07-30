@@ -6,7 +6,7 @@
 
 然而，在 Windows 下编写一个可注册为系统服务的程序并不是一件简单的事情。首先，程序必须是二进制的可执行程序，这就排除了脚本语言和虚拟机语言；其次，程序必须按系统服务的格式编写，过程繁琐，编写示例可见：[MS 官方文档](https://code.msdn.microsoft.com/windowsapps/CppWindowsService-cacf4948) 。
 
-[EasyService](https://github.com/pandolia/easy-service) 是一个可以将常规程序注册为系统服务的工具，体积只有 25KB 。你可以按常规的方法编写程序，然后用 EasyService 注册为一个系统服务，这样你的程序就可以在开机后用户登录之前自动运行、且在用户注销之后也不会停止。
+[EasyService](https://github.com/pandolia/easy-service) 是一个可以将常规程序注册为系统服务的工具，体积只有 37KB 。你可以按常规的方法编写程序，然后用 EasyService 注册为一个系统服务，这样你的程序就可以在开机后用户登录之前自动运行、且在用户注销之后也不会停止。
 
 如果你需要在 Windows 系统下部署网站、API 或其他需要长期在后台运行的服务， EasyService 将是一个很有用的工具。
 
@@ -34,13 +34,10 @@
 
 ```conf
 # Windows 系统服务名称、不能与系统中已有服务重名
-ServiceName: my-service
+ServiceName: hello-svc
 
 # 需要运行的可执行程序及命令行参数
-Worker: node index.js
-
-# 传递给程序的环境变量，如果没有，请设为空
-Environments: TEST-ENV1=A1,TEST-ENV2=A2,TEST-ENV3=A3
+Worker: sample-worker.exe
 
 # 程序运行的工作目录，请确保该目录已存在
 WorkingDir: worker
@@ -77,6 +74,20 @@ e. 运行 ***svc log*** 查看正在运行的服务程序的输出
 
 * （3） 注册服务之前，WorkingDir/OutFileDir 所指定的目录必须先创建好
 
+### EasyService 服务操作命令
+
+以下命令可以操作 EasyService 服务（用 svc 命令注册的服务），这些命令可在任意位置运行，不需要 cd 到 svc.conf 所在的目录：
+
+* ***svc list|ls*** 列出所有服务
+
+* ***svc start|stop|remove all*** 启动、停止或删除所有服务
+
+* ***svc check|status|test-worker|install|start|stop|restart|remove|log $project-directory*** 操作 ***$project-directory*** 目录下 svc.conf 指定的服务， ***$project-directory*** 中必须含有字符 ***\\*** 或 ***/*** 。
+
+* ***svc start|stop|restart|remove|log $service-name*** 操作名称为 ***$service-name*** 的服务
+
+* ***svc start|stop|restart|remove|log $service-index*** 操作第 ***$service-index*** 个服务，运行 ***svc ls*** 可查看所有服务的序号。
+
 ### 注意事项
 
 为保证服务的一致性，要求：
@@ -108,32 +119,6 @@ NSSM 主要缺点是界面和文档都是英文的，对新手也不见得更友
 * 日志自动按日期输出到不同文件
 
 * 停止服务时，先向工作进程的标准输入写入 "exit" ，并等待工作进程自己退出（但等待时间不超过 5 秒），这个 “通知退出” 的机制对于需要进行清理工作的程序来说是非常关键的
-
-### v1.0.1 版的新功能
-
-* （1） 原版 EasyService 需要对每个服务拷贝一个 svc.exe 作为服务的二进制文件。 v1.0.1 版去掉了此限制，所有 EasyService 服务共用同一个 svc.exe
-
-* （2） 增加一个 svc create $project_name 命令，可以快速创建样板工程目录
-
-* （3） 增加 register-this-path.bat ，可以自动注册 svc.exe 所在的目录，在任意位置都可以使用 svc 命令
-
-* （4） 增加 dependencies 配置项，可以设置本服务的依赖服务
-
-* （5） 增加 WaitSecondsForWorkerToExit 配置项，可设置停止服务时等待工作进程退出的最大时间
-
-### v1.0.2 版
-
-* （1） 修复了 v1.0.1 版中 Win7 系统下服务无法自启动的 Bug ，详见 [Issue-9](https://github.com/pandolia/easy-service/issues/9) 。
-
-### v1.0.3 版
-
-* （1） 优化 Process.KillTree 功能，在 Worker 有多级后代进程的时候可以保证服务停止时将 Worker 及其所有后代进程全部终止。
-
-* （2） 优化代码架构，优化日志内容。
-
-* （3） 增加功能： 当 OutFileDir 为 **$NULL** 时，不保存 Worker 的输出。
-
-* （4） 增加配置项 **Environments** ： 用于向 Worker 传递环境变量
 
 ### 典型用例
 

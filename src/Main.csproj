@@ -21,6 +21,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Conf.cs" />
+    <Compile Include="Consts.cs" />
     <Compile Include="Libs.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="SvcUtils.cs" />

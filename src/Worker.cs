@@ -7,39 +7,47 @@ public class Worker
 {
     private readonly Conf Conf;
 
+    private readonly Action<string, string> AddLog;
+
     private readonly bool RedirectMode;
 
     private readonly ProcessStartInfo Psi;
-
-    private Process Proc;
 
     private readonly object ProcLock = new object();
 
     private readonly object OutLock = new object();
 
-    public Worker(Conf conf, bool redirectMode)
+    private Process Proc = null;
+
+    public Worker(Action<string, string> logAdder = null, bool popup = false)
     {
-        Conf = conf;
-        RedirectMode = redirectMode;
+        AddLog = logAdder ?? Print;
+
+        Conf = new Conf(Abort);
+
         Psi = new ProcessStartInfo
         {
             FileName = Conf.WorkerFileName,
             Arguments = Conf.WorkerArguments,
-            WorkingDirectory = Conf.WorkingDir,
-            UseShellExecute = Conf.ManageMode
+            WorkingDirectory = Conf.WorkingDir
         };
 
-        if (RedirectMode)
+        if (popup)
         {
-            Psi.UseShellExecute = false;
-            Psi.RedirectStandardOutput = true;
-            Psi.RedirectStandardError = true;
-            Psi.RedirectStandardInput = true;
-            Psi.StandardErrorEncoding = Conf.WorkerEncodingObj;
-            Psi.StandardOutputEncoding = Conf.WorkerEncodingObj;
+            RedirectMode = false;
+            Psi.UseShellExecute = true;
+            return;
         }
 
-        foreach (var item in conf.Environments)
+        RedirectMode = true;
+        Psi.UseShellExecute = false;
+        Psi.RedirectStandardOutput = true;
+        Psi.RedirectStandardError = true;
+        Psi.RedirectStandardInput = true;
+        Psi.StandardErrorEncoding = Conf.WorkerEncodingObj;
+        Psi.StandardOutputEncoding = Conf.WorkerEncodingObj;
+
+        foreach (var item in Conf.Environments)
         {
             Psi.EnvironmentVariables[item.Key] = item.Value;
         }
@@ -67,15 +75,48 @@ public class Worker
         }
         catch (Exception ex)
         {
-            Conf.Abort($"Failed to create Worker `{Conf.Worker}` in `{Conf.WorkingDir}`:\r\n{ex}");
+            Abort($"Failed to create Worker `{Conf.Worker}` in `{Conf.WorkingDir}`:\r\n{ex}");
         }
 
-        Conf.Info($"Created Worker `{Conf.Worker}` in `{Conf.WorkingDir}`");
+        Info($"Created Worker `{Conf.Worker}` in `{Conf.WorkingDir}`");
 
         if (RedirectMode)
         {
             Proc.BeginErrorReadLine();
             Proc.BeginOutputReadLine();
+        }
+
+        if (Conf.WorkerMemoryLimit != -1)
+        {
+            Libs.NewThread(MonitorMemory);
+        }
+    }
+
+    private void MonitorMemory()
+    {
+        Info("Start Memory Monitor Loop");
+
+        while (true)
+        {
+            Thread.Sleep(Consts.MONITOR_INTERVAL_MINUTES * 60 * 1000);
+
+            lock (ProcLock)
+            {
+                if (Proc == null)
+                {
+                    break;
+                }
+
+                var mem = Proc.GetTreeMemory() / 1024;
+                if (mem < Conf.WorkerMemoryLimit)
+                {
+                    continue;
+                }
+
+                Warn($"Worker's memory({mem:N3}MB) exceeds {Conf.WorkerMemoryLimit}MB");
+                Proc.KillTree(Info);
+                break;
+            }
         }
     }
 
@@ -91,7 +132,7 @@ public class Worker
                 return;
             }
 
-            proc.KillTree(Conf.Info);
+            proc.KillTree(Info);
         }
     }
 
@@ -101,21 +142,21 @@ public class Worker
         {
             proc.StandardInput.Write("exit\r\n");
             proc.StandardInput.Flush();
-            Conf.Info("Notified Worker to exit");
+            Info("Notified Worker to exit");
         }
         catch (Exception ex)
         {
-            Conf.Error($"Failed to notify Worker to exit:\r\n{ex}");
+            Error($"Failed to notify Worker to exit:\r\n{ex}");
             return false;
         }
 
         if (!proc.WaitForExit(Conf.WaitSecondsForWorkerToExit * 1000))
         {
-            Conf.Info("Worker refused to exit");
+            Info("Worker refused to exit");
             return false;
         }
 
-        Conf.Info($"Worker exited with code {proc.ExitCode}");
+        Info($"Worker exited with code {proc.ExitCode}");
         return true;
     }
 
@@ -128,26 +169,85 @@ public class Worker
                 return;
             }
 
-            Conf.Warn($"The worker exited without be notified, "
-                + $"it will be re-created after {Conf.RESTART_WAIT_SECONDS} seconds");
+            Warn($"The worker exited without be notified, "
+                + $"it will be re-created after {Consts.RESTART_WAIT_SECONDS} seconds");
 
-            Thread.Sleep(Conf.RESTART_WAIT_SECONDS * 1000);
-
+            Thread.Sleep(Consts.RESTART_WAIT_SECONDS * 1000);
             Start();
+            Thread.Sleep(1000);
         }
     }
 
     private void OutPut(object sender, DataReceivedEventArgs ev)
     {
-        var s = ev.GetData();
-        if (s == null)
+        var data = ev.GetData();
+        if (data == null)
         {
             return;
         }
 
         lock (OutLock)
         {
-            Conf.WriteOutput(s);
+            WriteOutput(data);
+        }
+    }
+
+    private static void Print(string level, string s)
+    {
+        Console.WriteLine($"[svc.{level.ToLower()}] {s}");
+    }
+
+    private void Info(string msg)
+    {
+        AddLog("INFO", msg);
+    }
+
+    private void Warn(string msg)
+    {
+        AddLog("WARN", msg);
+    }
+
+    private void Error(string msg)
+    {
+        AddLog("ERROR", msg);
+    }
+
+    private void Abort(string msg)
+    {
+        AddLog("CRITICAL", msg);
+        Environment.Exit(1);
+    }
+
+    private void WriteOutput(string data)
+    {
+        if (AddLog == Print)
+        {
+            Console.WriteLine(data);
+            return;
+        }
+
+        if (Conf.OutFileDir == null)
+        {
+            return;
+        }
+
+        var outFile = Path.Combine(Conf.OutFileDir, $"{DateTime.Now:yyyy-MM-dd}.log");
+        try
+        {
+            Libs.WriteLineToFile(outFile, data, true);
+        }
+        catch (Exception ex)
+        {
+            Error($"Failed to write Worker's output to `{outFile}`: {ex.Message}");
+        }
+
+        try
+        {
+            Libs.WriteLineToFile(Conf.LastLineFile, data, false);
+        }
+        catch (Exception e)
+        {
+            Error($"Failed to write Worker's output to `{Conf.LastLineFile}`: {e.Message}");
         }
     }
 }

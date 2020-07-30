@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using System.Threading;
 using System.Management;
+using System.Text.RegularExpressions;
 
 public delegate string FieldSetter(string value);
 
@@ -13,6 +14,8 @@ public static class Libs
     public static readonly string BinDir = AppDomain.CurrentDomain.BaseDirectory;
 
     public static readonly string BinPath = Assembly.GetExecutingAssembly().Location;
+
+    public static string GetCwd() => Path.GetFullPath(".") + "\\";
 
     public static void SetCwd(string d)
     {
@@ -40,6 +43,18 @@ public static class Libs
 
     }
 
+    public static void Abort(string msg)
+    {
+        Console.WriteLine(msg);
+        Environment.Exit(1);
+    }
+
+    public static void Exit(string msg)
+    {
+        Console.WriteLine(msg);
+        Environment.Exit(0);
+    }
+
     public static void Dump(string s)
     {
         var pid = Process.GetCurrentProcess().Id;
@@ -54,12 +69,87 @@ public static class Libs
         }
     }
 
+    public static void Timeout(Action f, int seconds, string startMsg, string timeoutMsg, string okMsg)
+    {
+        Console.Write($"{startMsg}...");
+        Console.Out.Flush();
+
+        var flag = new bool[1] { false };
+        NewThread(() => Waiting(flag, (seconds + 1) * 1000, timeoutMsg));
+        f();
+        flag[0] = true;
+
+        Console.Write($" [√]");
+        Console.Out.Flush();
+        Thread.Sleep(500);
+        Console.WriteLine($"\r{okMsg}{"".PadRight(startMsg.Length + 10 + seconds)}");
+    }
+
+    private static void Waiting(bool[] flag, int milliseconds, string timeoutMsg)
+    {
+        Thread.Sleep(2000);
+        if (flag[0])
+        {
+            return;
+        }
+
+        for (int t = 2000; t < milliseconds; t += 1500)
+        {
+            Thread.Sleep(1500);
+            if (flag[0])
+            {
+                return;
+            }
+
+            Console.Write(".");
+            Console.Out.Flush();
+        }
+
+        if (flag[0])
+        {
+            return;
+        }
+
+        Console.WriteLine($"\r\n{timeoutMsg}");
+        Environment.Exit(1);
+    }
+
     public static void WriteLineToFile(string file, string s, bool append = false)
     {
         using (var sw = new StreamWriter(file, append))
         {
             sw.WriteLine(s);
             sw.Flush();
+        }
+    }
+
+    public static void MonitorFile(string filename)
+    {
+        long prev = 0;
+        while (true)
+        {
+            Thread.Sleep(200);
+
+            var lastWrite = LastWriteTime(filename);
+            if (lastWrite == 0 || lastWrite == prev)
+            {
+                continue;
+            }
+
+            try
+            {
+                using (var sr = new StreamReader(filename))
+                {
+                    Console.Write(sr.ReadToEnd());
+                }
+            }
+            catch (Exception)
+            {
+                continue;
+            }
+
+            Console.Out.Flush();
+            prev = lastWrite;
         }
     }
 
@@ -90,7 +180,24 @@ public static class Libs
         }
     }
 
-    public static string ReadConfig(string file, Dictionary<string, FieldSetter> setterDict)
+    public static void ReplaceStringInFile(string file, string oldStr, string newStr)
+    {
+        string content;
+
+        using (var sr = new StreamReader(file))
+        {
+            content = sr.ReadToEnd();
+        }
+
+        content = content.Replace(oldStr, newStr);
+
+        using (var sw = new StreamWriter(file))
+        {
+            sw.Write(content);
+        }
+    }
+
+    public static string ReadConfig(string file, Dictionary<string, Func<string, string>> setterDict)
     {
         string text;
         try
@@ -102,7 +209,7 @@ public static class Libs
         }
         catch (Exception e)
         {
-            return $"Falied to read config: {e.Message}";
+            return e.Message;
         }
 
         var errs = new List<string>();
@@ -152,21 +259,21 @@ public static class Libs
             }
         }
 
-        return errs.Count == 0 ? null : "    " + string.Join("\r\n    ", errs);
+        return errs.Count == 0 ? null : "\r\n    " + string.Join("\r\n    ", errs);
     }
 
-    public static string CopyDir(string src, string dest, string ignoreExt)
+    public static void CopyDir(string src, string dest, string ignoreExt)
     {
         var srcDir = new DirectoryInfo(src);
         if (!srcDir.Exists)
         {
-            return $"Source directory {src} does not exist";
+            Abort($"Source directory {src} does not exist");
         }
 
         var destDir = new DirectoryInfo(dest);
         if (destDir.Exists)
         {
-            return $"Destination directory {dest} already exists";
+            Abort($"Destination directory {dest} already exists");
         }
 
         try
@@ -175,7 +282,7 @@ public static class Libs
         }
         catch (Exception ex)
         {
-            return ex.Message;
+            Abort(ex.Message);
         }
 
         var srcPath = srcDir.FullName;
@@ -197,8 +304,6 @@ public static class Libs
 
             File.Copy(file, tarFile);
         }
-
-        return null;
     }
 
     public static bool Contains<T>(this IEnumerable<T> list, T e)
@@ -307,6 +412,68 @@ public static class Libs
         }
     }
 
+    public static float GetTreeMemory(this Process proc)
+    {
+        var tree = proc.GetTree();
+        var instanceNames = GetInstanceNames();
+        float mem = 0.0f;
+
+        foreach (var p in tree)
+        {
+            if (p.HasExited)
+            {
+                continue;
+            }
+
+            mem += proc.GetMemory(instanceNames);
+        }
+
+        return mem;
+    }
+
+    public static float GetMemory(this Process proc, string[] instanceNames)
+    {
+        var cate = "Process";
+        var counter = "Working Set - Private";
+        var name = proc.GetInstanceName(instanceNames);
+
+        if (name == null)
+        {
+            return 0;
+        }
+
+        using (var p = new PerformanceCounter(cate, counter, name, true))
+        {
+            return p.NextValue() / 1024;
+        }
+    }
+
+    public static string[] GetInstanceNames()
+    {
+        return new PerformanceCounterCategory("Process").GetInstanceNames();
+    }
+
+    public static string GetInstanceName(this Process proc, string[] instanceNames)
+    {
+        foreach (var name in instanceNames)
+        {
+            if (!name.StartsWith(proc.ProcessName))
+            {
+                continue;
+            }
+
+            using (var pfc = new PerformanceCounter("Process", "ID Process", name, true))
+            {
+                if (proc.Id == (int) pfc.RawValue)
+                {
+                    return name;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public static string GetData(this DataReceivedEventArgs ev)
     {
         string s = ev.Data;
@@ -342,5 +509,99 @@ public static class Libs
         }
 
         return string.Join(", ", segs);
+    }
+
+    public static string ToPrettyTable(string[,] mat)
+    {
+        var m = mat.GetLength(0);
+        var n = mat.GetLength(1);
+        var w = new int[n + 1];
+        var buf = new string[n + 1];
+        var result = new string[2 * m + 1];
+
+        w[0] = (m - 1).ToString().Length;
+        for (var j = 0; j < n; j++)
+        {
+            w[j + 1] = 1;
+            for (var i = 0; i < m; i++)
+            {
+                w[j + 1] = Math.Max(w[j + 1], mat[i, j].Length);
+            }
+        }
+
+        for (var j = 0; j <= n; j++)
+        {
+            buf[j] = "".PadRight(w[j], '-');
+        }
+
+        result[0] = $"+-{string.Join("-+-", buf)}-+";
+
+        for (var i = 0; i < m; i++)
+        {
+            var si = (i == 0) ? "" : i.ToString();
+            buf[0] = si.PadRight(w[0], ' ');
+
+            for (var j = 0; j < n; j++)
+            {
+                buf[j + 1] = mat[i, j].PadRight(w[j + 1], ' ');
+            }
+
+            result[2 * i + 1] = $"| {string.Join(" | ", buf)} |";
+            result[2 * i + 2] = result[0];
+        }
+
+        return string.Join("\r\n", result);
+    }
+
+    public static bool InsertInto<T>(List<T> list, T el, Func<T, T, bool> isDepend)
+    {
+        int n = list.Count, i, j;
+
+        for (i = n - 1; i >= 0; i--)
+        {
+            if (isDepend(el, list[i]))
+            {
+                break;
+            }
+        }
+
+        if (i == -1)
+        {
+            list.Insert(0, el);
+            return true;
+        }
+
+        for (j = 0; j < n; j++)
+        {
+            if (isDepend(list[j], el))
+            {
+                break;
+            }
+        }
+
+        if (j == n)
+        {
+            list.Add(el);
+            return true;
+        }
+
+        if (i >= j)
+        {
+            return false;
+        }
+
+        list.Insert(j, el);
+        return true;
+    }
+
+    public static bool MatchRegex(string input, string regex)
+    {
+        var rx = new Regex($"^{regex}$", RegexOptions.Compiled);
+        return rx.IsMatch(input);
+    }
+
+    public static bool IsDigit(this string input)
+    {
+        return MatchRegex(input, @"\d+");
     }
 }
