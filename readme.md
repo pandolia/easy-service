@@ -98,7 +98,11 @@ e. 运行 ***svc log*** 查看正在运行的服务程序的输出
 
 ### 内部实现
 
-EasyService 实质是将自己（svc.exe）注册为一个系统服务，此服务启动时，会读取 svc.conf 中的配置，创建一个子进程运行 Worker 中指定的程序及命令行参数，之后，监视该子进程，如果发现 ***子进程停止运行（或内存使用量超过指定值）*** ，会重新启动一个子进程。而当此服务停止时，会向子进程的标准输入中写入数据 “exit” ，并等待子进程退出，如果等待时间超过 5 秒（或 WaitSecondsForWorkerToExit 秒），则直接终止子进程。
+EasyService 实质是将自己（svc.exe）注册为一个系统服务，此服务启动时，会读取 svc.conf 中的配置，创建一个子进程运行 Worker 中指定的程序及命令行参数，之后，监视该子进程，如果发现 ***子进程停止运行（或内存使用量超过指定值）*** ，会重新启动一个子进程。而当此服务停止时，按以下原则终止子进程：
+
+* 当 WaitSecondsForWorkerToExit 为 0 时，直接终止子进程
+
+* 当 WaitSecondsForWorkerToExit 不为 0 时，向子进程的标准输入中写入数据 “exit” ，并等待子进程退出，若等待时间超过 WaitSecondsForWorkerToExit 秒，则终止子进程。
 
 EasyService 源码见 [src](https://github.com/pandolia/easy-service/tree/master/src) 。
 
