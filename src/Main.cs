@@ -4,7 +4,7 @@ using System.ServiceProcess;
 
 public class Program
 {
-    private const string VERSION = "Easy Service: v1.0.4";
+    private const string VERSION = "Easy Service: v1.0.5";
 
     private const string USAGE =
         "Usage:\r\n" +

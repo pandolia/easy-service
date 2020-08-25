@@ -82,11 +82,23 @@ e. 运行 ***svc log*** 查看正在运行的服务程序的输出
 
 * svc start|stop|remove all： 启动、停止或删除所有服务
 
-* svc check|status|test-worker|install|start|stop|restart|remove|log $project-directory： 操作 $project-directory 目录下 svc.conf 指定的服务， $project-directory 中必须含有字符 \\ 或 / 。
+* svc check|status|test-worker|install|start|stop|restart|remove|log $project-directory： 操作 $project-directory 目录下 svc.conf 指定的服务（$project-directory 中必须含有字符 \\ 或 /）
 
-* svc start|stop|restart|remove|log $service-name： 操作名称为 $service-name 的服务
+* svc start|stop|restart|remove|log $service-index： 操作第 $service-index 个服务（$service-index 为数字，运行 svc ls 可查看所有服务的序号）
 
-* svc start|stop|restart|remove|log $service-index： 操作第 $service-index 个服务，运行 svc ls 可查看所有服务的序号。
+* svc start|stop|restart|remove|log $service-name： 操作名称为 $service-name 的服务（$service-name 不全为数字、不包含 \\ 或 / ，且不为 all ）
+
+以 start 命令为例： 
+
+* svc start all： 启动所有服务
+
+* svc start aa\： 启动 aa\svc.conf 文件指定的服务
+
+* svc start aa： 启动名称为 aa 的服务
+
+* svc start 2： 启动第 2 个服务
+
+注意： check|status|test-worker|install 命令只支持 $project-directory 模式， restart|log 命令不支持 all 模式。
 
 ### 注意事项
 

@@ -69,6 +69,11 @@ public class Conf
         }
 
         ResolvePaths();
+
+        if (DisplayName == null || DisplayName.Length == 0)
+        {
+            DisplayName = ServiceName;
+        }
     }
 
     private void ResolvePaths()
