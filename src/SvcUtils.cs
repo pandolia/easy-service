@@ -28,11 +28,6 @@ public static class SvcUtils
         {
             Libs.Abort($"Failed to install Service \"{conf.ServiceName}\"");
         }
-        
-        if (conf.LastLineFile != null)
-        {
-            Libs.WriteLineToFile(conf.LastLineFile, "", false);
-        }
 
         var msg = $"Installed Service \"{conf.ServiceName}\"";
         Console.WriteLine(msg);

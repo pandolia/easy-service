@@ -12,7 +12,7 @@
 
 ### 安装
 
-下载 [源码及程序v1.0.6](https://github.com/pandolia/easy-service/archive/v1.0.6.zip)，解压。右键单击 bin 目录下的 register-this-path.bat ，以管理员身份运行，将 bin 目录加入至系统路径中，也可以手动将此目录加入至系统路径。
+下载 [源码及程序](https://github.com/pandolia/easy-service/archive/master.zip)，解压。右键单击 bin 目录下的 register-this-path.bat ，以管理员身份运行，将 bin 目录加入至系统路径中，也可以手动将此目录加入至系统路径。
 
 重新打开 “我的电脑” ，在任意位置打开一个命令行窗口，输入 ***svc -v*** ，如果正常输出版本信息，则表明安装成功。
 

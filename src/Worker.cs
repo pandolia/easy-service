@@ -55,6 +55,11 @@ public class Worker
 
     public void Start()
     {
+        if (Proc == null && Conf.LastLineFile != null)
+        {
+            Libs.WriteLineToFile(Conf.LastLineFile, "", false);
+        }
+
         Proc = new Process
         {
             StartInfo = Psi
