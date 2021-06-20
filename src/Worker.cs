@@ -53,8 +53,19 @@ public class Worker
         }
     }
 
+    private Thread thDelete = null;
+
     public void Start()
     {
+        if (Conf.MaxLogFilesNum != 0 && thDelete == null)
+        {
+            thDelete = new Thread(DeleteLoop)
+            {
+                IsBackground = true
+            };
+            thDelete.Start();
+        }
+
         if (Proc == null && Conf.LastLineFile != null)
         {
             Libs.WriteLineToFile(Conf.LastLineFile, "", false);
@@ -253,6 +264,38 @@ public class Worker
         catch (Exception e)
         {
             Error($"Failed to write Worker's output to `{Conf.LastLineFile}`: {e.Message}");
+        }
+    }
+
+    private void DeleteLoop()
+    {
+        // 2 hours
+        var m = 2 * 60 * 60 * 1000;
+        while (true)
+        {
+            DeleteOldLogFiles();
+            Thread.Sleep(m);
+        }
+    }
+
+    private void DeleteOldLogFiles()
+    {
+        var files = Libs.GetFiles(Conf.OutFileDir, @"^\d{4}-\d{2}-\d{2}\.log$");
+
+        for (int i = 0, n = files.Count - Conf.MaxLogFilesNum; i < n; i++)
+        {
+            var file = files[i];
+            try
+            {
+                file.Delete();
+            }
+            catch (Exception ex)
+            {
+                Error($"Failed to delete file `{file.FullName}`: {ex.Message}");
+                continue;
+            }
+
+            Info($"Delete file `{file.FullName}`");
         }
     }
 }

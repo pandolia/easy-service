@@ -22,6 +22,35 @@ public static class Libs
         Directory.SetCurrentDirectory(d);
     }
 
+    public static List<FileInfo> GetFiles(string directory, string pattern)
+    {
+        var result = new List<FileInfo>();
+        var regex = new Regex(pattern);
+        var d = new DirectoryInfo(directory);
+        var files = d.GetFiles();
+        foreach (var f in files)
+        {
+            if (regex.IsMatch(f.Name))
+            {
+                result.Add(f);
+            }
+        }
+
+        result.Sort((x, y) => x.Name.CompareTo(y.Name));
+
+        return result;
+    }
+
+    public static List<T> Front<T>(this List<T> list, int n)
+    {
+        var result = new List<T>();
+        for (int i = 0; i < n; i++)
+        {
+            result.Add(list[i]);
+        }
+        return result;
+    }
+
     public static string AddUniq(this string s, string p, char c)
     {
         if (s == p || s == "")

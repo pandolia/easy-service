@@ -21,6 +21,8 @@ public class Conf
 
     public int WaitSecondsForWorkerToExit { get; private set; } = 0;
 
+    public int MaxLogFilesNum { get; private set; } = 0;
+
     public string WorkerEncoding { get; private set; } = null;
 
     public int WorkerMemoryLimit { get; private set; } = -1;
@@ -54,6 +56,7 @@ public class Conf
             { "setWorkingDir", SetWorkingDir },
             { "setOutFileDir", SetOutFileDir },
             { "setWaitSecondsForWorkerToExit", SetWaitSecondsForWorkerToExit },
+            { "setMaxLogFilesNum", SetMaxLogFilesNum },
             { "setWorkerEncoding", SetWorkerEncoding },
             { "setWorkerMemoryLimit", SetWorkerMemoryLimit },
             { "setDomain", SetDomain },
@@ -101,6 +104,8 @@ public class Conf
 
     public void ShowConfig()
     {
+        var maxLogFilesNumString = (MaxLogFilesNum == 0) ? "" : $"{MaxLogFilesNum}";
+
         Console.WriteLine($"ServiceName: {ServiceName}");
         Console.WriteLine($"DisplayName: {DisplayName}"); 
         Console.WriteLine($"Description: {Description}");
@@ -112,6 +117,7 @@ public class Conf
         Console.WriteLine($"WorkingDir: {WorkingDir}");
         Console.WriteLine($"OutFileDir: {OutFileDir}");
         Console.WriteLine($"WaitSecondsForWorkerToExit: {WaitSecondsForWorkerToExit}");
+        Console.WriteLine($"MaxLogFilesNum: {maxLogFilesNumString}");
         Console.WriteLine($"WorkerEncoding: {WorkerEncoding}");
         Console.WriteLine($"WorkerMemoryLimit: {WorkerMemoryLimit}");
         Console.WriteLine($"Domain: {Domain}");
@@ -301,6 +307,23 @@ public class Conf
         }
 
         WaitSecondsForWorkerToExit = val;
+        return null;
+    }
+
+    private string SetMaxLogFilesNum(string value)
+    {
+        if (value == "")
+        {
+            MaxLogFilesNum = 0;
+            return null;
+        }
+
+        if (!int.TryParse(value, out int val) || val < 2)
+        {
+            return "should be a number greater than or equals 2";
+        }
+
+        MaxLogFilesNum = val;
         return null;
     }
 
