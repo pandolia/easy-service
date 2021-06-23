@@ -108,6 +108,56 @@ e. 运行 ***svc log*** 查看正在运行的服务程序的输出
 
 * （2） 不应在服务管理控制台中对采用 EasyService 安装的服务进行修改或操作，也不应采用除 svc 命令以外的其他方式进行修改或操作
 
+### 配置项
+
+```conf
+# 服务名称，不能与系统中已有服务重名
+ServiceName: easy-service
+
+# 服务显示名称，不能与系统中已有服务的显示名称相同
+DisplayName: easy-service
+
+# 服务描述
+Description: An example of EasyService
+
+# 本服务依赖的服务名列表，用逗号分开，例如： Appinfo,AppMgmt
+Dependencies:
+
+# 需要运行的可执行程序及命令行参数
+Worker: sample-worker.exe
+
+# 运行程序的环境变量
+Environments: TEST-ENV1=A1,TEST-ENV2=A2,TEST-ENV3=A3
+Environments: TEST-ENV4=A4,TEST-ENV5=A5,TEST-ENV6=A6
+
+# 程序运行的工作目录，请确保该目录已存在
+WorkingDir: worker
+
+# 输出目录，程序运行过程的输出将会写到这个目录下面，请确保该目录已存在
+# 如果不想保存 Worker 的输出，请设为 $NULL
+OutFileDir: outfiles
+
+# 停止服务时，等待程序主动退出的最大时间
+WaitSecondsForWorkerToExit: 5
+
+# 日志文件的最大个数，设为空则不限制，否则需要设置为大于等于 2 的整数
+# svc.exe 每隔两个小时检查一次日志文件个数，如果个数大于这个值，就删除最老的几个文件
+MaxLogFilesNum: 
+
+# 程序的内存使用限制值
+WorkerMemoryLimit:
+
+# 程序输出的编码，如果不确定，请设为空
+WorkerEncoding: utf8
+
+# 运行本服务的用户，一般情况下用 LOCAL-SYSTEM ，下面三个项都设为空
+# 如果使用普通用户，下面三个项， 域、用户名、密码都要设置，而且要在服务管理面板里面授权此用户运行服务的权限
+# 域如果不确定，可以设置为 “."
+Domain:
+User:
+Password:
+```
+
 ### 内部实现
 
 EasyService 实质是将自己（svc.exe）注册为一个系统服务，此服务启动时，会读取 svc.conf 中的配置，创建一个子进程运行 Worker 中指定的程序及命令行参数，之后，监视该子进程，如果发现 ***子进程停止运行（或内存使用量超过指定值）*** ，会重新启动一个子进程。而当此服务停止时，按以下原则终止子进程：
