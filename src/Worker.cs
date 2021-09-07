@@ -145,10 +145,19 @@ public class Worker
 
             if (RedirectMode && Conf.WaitSecondsForWorkerToExit > 0 && NotifyToExit(proc))
             {
+                lock (OutLock)
+                {
+                    CloseLogWriter();
+                }
                 return;
             }
 
             proc.KillTree(Info);
+        }
+
+        lock (OutLock)
+        {
+            CloseLogWriter();
         }
     }
 
@@ -247,15 +256,7 @@ public class Worker
             return;
         }
 
-        var outFile = Path.Combine(Conf.OutFileDir, $"{DateTime.Now:yyyy-MM-dd}.log");
-        try
-        {
-            Libs.WriteLineToFile(outFile, data, true);
-        }
-        catch (Exception ex)
-        {
-            Error($"Failed to write Worker's output to `{outFile}`: {ex.Message}");
-        }
+        WriteLineToLogFile(data);
 
         try
         {
@@ -265,6 +266,74 @@ public class Worker
         {
             Error($"Failed to write Worker's output to `{Conf.LastLineFile}`: {e.Message}");
         }
+    }
+
+    private string logFile = null;
+
+    private StreamWriter logWriter = null;
+
+    private void GetStreamWriter()
+    {
+        if (logFile == null)
+        {
+            logFile = $"{DateTime.Now:yyyy-MM-dd}.log";
+            logWriter = new StreamWriter(Path.Combine(Conf.OutFileDir, logFile), true);
+            return;
+        }
+
+        var curLogFile = $"{DateTime.Now:yyyy-MM-dd}.log";
+        if (curLogFile != logFile)
+        {
+            logWriter.Close();
+            logFile = curLogFile;
+            logWriter = new StreamWriter(Path.Combine(Conf.OutFileDir, logFile), true);
+        }
+    }
+
+    private void WriteLineToLogFile(string line)
+    {
+        try
+        {
+            GetStreamWriter();
+        }
+        catch (Exception ex)
+        {
+            Error($"Failed to get stream writer for logging: {ex.Message}");
+            logFile = null;
+            logWriter = null;
+            return;
+        }
+
+        try
+        {
+            logWriter.WriteLine(line);
+            logWriter.Flush();
+        }
+        catch (Exception ex)
+        {
+            Error($"Failed to write line to log file: {ex.Message}");
+            CloseLogWriter();
+        }
+    }
+
+    private void CloseLogWriter()
+    {
+        if (logWriter == null)
+        {
+            return;
+        }
+
+        try
+        {
+            logWriter.Close();
+        }
+        catch (Exception ex)
+        {
+            Error($"Failed to close stream writer of logging file: {ex.Message}");
+        }
+        
+        logFile = null;
+        logWriter = null;
     }
 
     private void DeleteLoop()
