@@ -62,8 +62,6 @@ c. 运行 ***svc install*** 命令安装并启动系统服务，此时程序就�
 
 d. 运行 ***svc stop|start|restart|remove*** 停止、启动、重启或删除本系统服务
 
-e. 运行 ***svc log*** 查看正在运行的服务程序的输出
-
 ### 注册多个服务
 
 如果需要注册多个服务，可以用 ***svc create*** 创建多个目录，修改 svc.conf 中的服务名和程序名等内容，再在这些目录下打开命令行窗口执行 svc check|test-worker|install 等命令就可以了。需要注意的是：
@@ -82,11 +80,11 @@ e. 运行 ***svc log*** 查看正在运行的服务程序的输出
 
 * svc start|stop|remove all： 启动、停止或删除所有服务
 
-* svc check|status|test-worker|install|start|stop|restart|remove|log $project-directory： 操作 $project-directory 目录下 svc.conf 指定的服务（$project-directory 中必须含有字符 \\ 或 /）
+* svc check|status|test-worker|install|start|stop|restart|remove $project-directory： 操作 $project-directory 目录下 svc.conf 指定的服务（$project-directory 中必须含有字符 \\ 或 /）
 
-* svc start|stop|restart|remove|log $service-index： 操作第 $service-index 个服务（$service-index 为数字，运行 svc ls 可查看所有服务的序号）
+* svc start|stop|restart|remove $service-index： 操作第 $service-index 个服务（$service-index 为数字，运行 svc ls 可查看所有服务的序号）
 
-* svc start|stop|restart|remove|log $service-name： 操作名称为 $service-name 的服务（$service-name 不全为数字、不包含 \\ 或 / ，且不为 all ）
+* svc start|stop|restart|remove $service-name： 操作名称为 $service-name 的服务（$service-name 不全为数字、不包含 \\ 或 / ，且不为 all ）
 
 以 start 命令为例： 
 
@@ -98,7 +96,7 @@ e. 运行 ***svc log*** 查看正在运行的服务程序的输出
 
 * svc start 2： 启动第 2 个服务
 
-注意： check|status|test-worker|install 命令只支持 $project-directory 模式， restart|log 命令不支持 all 模式。
+注意： check|status|test-worker|install 命令只支持 $project-directory 模式， restart 命令不支持 all 模式。
 
 ### 注意事项
 

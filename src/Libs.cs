@@ -152,36 +152,6 @@ public static class Libs
         }
     }
 
-    public static void MonitorFile(string filename)
-    {
-        long prev = 0;
-        while (true)
-        {
-            Thread.Sleep(200);
-
-            var lastWrite = LastWriteTime(filename);
-            if (lastWrite == 0 || lastWrite == prev)
-            {
-                continue;
-            }
-
-            try
-            {
-                using (var sr = new StreamReader(filename))
-                {
-                    Console.Write(sr.ReadToEnd());
-                }
-            }
-            catch (Exception)
-            {
-                continue;
-            }
-
-            Console.Out.Flush();
-            prev = lastWrite;
-        }
-    }
-
     public static int Exec(string file, string args = null, string dir = null)
     {
         try

@@ -61,8 +61,6 @@ c. run ***svc install*** to register and start a system service. Now your progra
 
 d. run ***svc stop|start|restart|remove*** to stop, start, restart and remove the service.
 
-e. run ***svc log*** to display output of the service.
-
 ### Register multiple services
 
 To register multiple services, just run ***svc create your-project-name*** to create multiple template project directories, edit configurations, and run **svc check|test-worker|install|...** .

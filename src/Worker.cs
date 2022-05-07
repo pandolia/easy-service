@@ -66,11 +66,6 @@ public class Worker
             thDelete.Start();
         }
 
-        if (Proc == null && Conf.LastLineFile != null)
-        {
-            Libs.WriteLineToFile(Conf.LastLineFile, "", false);
-        }
-
         Proc = new Process
         {
             StartInfo = Psi
@@ -257,15 +252,6 @@ public class Worker
         }
 
         WriteLineToLogFile(data);
-
-        try
-        {
-            Libs.WriteLineToFile(Conf.LastLineFile, data, false);
-        }
-        catch (Exception e)
-        {
-            Error($"Failed to write Worker's output to `{Conf.LastLineFile}`: {e.Message}");
-        }
     }
 
     private string logFile = null;

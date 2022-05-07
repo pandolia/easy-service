@@ -33,8 +33,6 @@ public class Conf
 
     public string Password { get; private set; } = null;
 
-    public string LastLineFile { get; private set; } = null;
-
     public string WorkerFileName { get; private set; } = null;
 
     public string WorkerArguments { get; private set; } = null;
@@ -83,7 +81,6 @@ public class Conf
     {
         WorkingDir = Path.GetFullPath(WorkingDir);
         OutFileDir = OutFileDir != null ? Path.GetFullPath(OutFileDir) : null;
-        LastLineFile = OutFileDir != null ? Path.Combine(OutFileDir, Consts.LAST_LINE_FILE) : null;
 
         var suffixes = new string[] { "", ".exe", ".bat" };
         foreach (var suffix in suffixes)

@@ -4,7 +4,7 @@ using System.ServiceProcess;
 
 public class Program
 {
-    private const string VERSION = "Easy Service: v1.0.9";
+    private const string VERSION = "Easy Service: v1.0.10";
 
     private const string USAGE =
         "Usage:\r\n" +
@@ -14,7 +14,7 @@ public class Program
         "    svc test-worker [$project-directory]\r\n" +
         "    svc install [$project-directory]\r\n" +
         "    svc stop|start|remove [$project-directory|$service-name|$service-index|all]\r\n" +
-        "    svc restart|log [$project-directory|$service-name|$service-index]\r\n" +
+        "    svc restart [$project-directory|$service-name|$service-index]\r\n" +
         "    svc list|ls\r\n" +
         "\r\n" +
         "Note: $project-directory must contain '\\' or '/'\r\n" +
@@ -150,8 +150,7 @@ public class Program
 
         if (op == "log")
         {
-            LoggingSvc(conf, status);
-            return;
+            Libs.Abort("`log` command has been deprecated since v1.0.10");
         }
 
         // op: start|stop|restart|remove
@@ -173,10 +172,7 @@ public class Program
 
         if (op == "log")
         {
-            var conf = new Conf();
-            var status = sc.Status.ToString().ToLower();
-            LoggingSvc(conf, status);
-            return;
+            Libs.Abort("`log` command has been deprecated since v1.0.10");
         }
 
         // op = start|stop|restart|remove
@@ -202,22 +198,6 @@ public class Program
         worker.Start();
         Console.ReadLine();
         worker.Stop();
-    }
-
-    private static void LoggingSvc(Conf conf, string status)
-    {
-        if (status != "running")
-        {
-            Libs.Abort($"Service \"{conf.ServiceName}\" is not running");
-        }
-
-        if (conf.OutFileDir == null)
-        {
-            Libs.Abort("Error: OutFileDir must not be $NULL");
-        }
-
-        Libs.NewThread(() => Libs.MonitorFile(conf.LastLineFile));
-        Console.ReadLine();
     }
 }
 
