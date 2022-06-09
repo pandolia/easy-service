@@ -114,7 +114,7 @@ public class Conf
         Console.WriteLine($"WorkingDir: {WorkingDir}");
         Console.WriteLine($"OutFileDir: {OutFileDir}");
         Console.WriteLine($"WaitSecondsForWorkerToExit: {WaitSecondsForWorkerToExit}");
-        Console.WriteLine($"MaxLogFilesNum: {maxLogFilesNumString}");
+        Console.WriteLine($"MaxLogFilesNum: {maxLogFilesNumString} (WARN: This property is deprecated since v1.0.11)");
         Console.WriteLine($"WorkerEncoding: {WorkerEncoding}");
         Console.WriteLine($"WorkerMemoryLimit: {WorkerMemoryLimit}");
         Console.WriteLine($"Domain: {Domain}");
@@ -281,11 +281,17 @@ public class Conf
             return null;
         }
 
-        OutFileDir = value;
-        if (!Directory.Exists(OutFileDir))
+        if (!Directory.Exists(value))
         {
             return "directory not exists";
         }
+
+        if (!value.EndsWith("\\"))
+        {
+            value += "\\";
+        }
+
+        OutFileDir = value;
 
         return null;
     }

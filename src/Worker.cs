@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading;
 
 public class Worker
@@ -15,7 +14,7 @@ public class Worker
 
     private readonly object ProcLock = new object();
 
-    private readonly object OutLock = new object();
+    private readonly MyFileLogger FileLogger = null;
 
     private Process Proc = null;
 
@@ -24,6 +23,11 @@ public class Worker
         AddLog = logAdder ?? Print;
 
         Conf = new Conf(Abort);
+
+        if (Conf.OutFileDir != null)
+        {
+            FileLogger = new MyFileLogger(Conf);
+        }
 
         Psi = new ProcessStartInfo
         {
@@ -53,19 +57,8 @@ public class Worker
         }
     }
 
-    private Thread thDelete = null;
-
     public void Start()
     {
-        if (Conf.MaxLogFilesNum != 0 && thDelete == null)
-        {
-            thDelete = new Thread(DeleteLoop)
-            {
-                IsBackground = true
-            };
-            thDelete.Start();
-        }
-
         Proc = new Process
         {
             StartInfo = Psi
@@ -140,19 +133,10 @@ public class Worker
 
             if (RedirectMode && Conf.WaitSecondsForWorkerToExit > 0 && NotifyToExit(proc))
             {
-                lock (OutLock)
-                {
-                    CloseLogWriter();
-                }
                 return;
             }
 
             proc.KillTree(Info);
-        }
-
-        lock (OutLock)
-        {
-            CloseLogWriter();
         }
     }
 
@@ -206,10 +190,18 @@ public class Worker
             return;
         }
 
-        lock (OutLock)
+        if (AddLog == Print)
         {
-            WriteOutput(data);
+            Console.WriteLine(data);
+            return;
         }
+
+        if (FileLogger == null)
+        {
+            return;
+        }
+
+        FileLogger.Log(data);
     }
 
     private static void Print(string level, string s)
@@ -236,121 +228,5 @@ public class Worker
     {
         AddLog("CRITICAL", msg);
         Environment.Exit(1);
-    }
-
-    private void WriteOutput(string data)
-    {
-        if (AddLog == Print)
-        {
-            Console.WriteLine(data);
-            return;
-        }
-
-        if (Conf.OutFileDir == null)
-        {
-            return;
-        }
-
-        WriteLineToLogFile(data);
-    }
-
-    private string logFile = null;
-
-    private StreamWriter logWriter = null;
-
-    private void GetStreamWriter()
-    {
-        if (logFile == null)
-        {
-            logFile = $"{DateTime.Now:yyyy-MM-dd}.log";
-            logWriter = new StreamWriter(Path.Combine(Conf.OutFileDir, logFile), true);
-            return;
-        }
-
-        var curLogFile = $"{DateTime.Now:yyyy-MM-dd}.log";
-        if (curLogFile != logFile)
-        {
-            logWriter.Close();
-            logFile = curLogFile;
-            logWriter = new StreamWriter(Path.Combine(Conf.OutFileDir, logFile), true);
-        }
-    }
-
-    private void WriteLineToLogFile(string line)
-    {
-        try
-        {
-            GetStreamWriter();
-        }
-        catch (Exception ex)
-        {
-            Error($"Failed to get stream writer for logging: {ex.Message}");
-            logFile = null;
-            logWriter = null;
-            return;
-        }
-
-        try
-        {
-            logWriter.WriteLine(line);
-            logWriter.Flush();
-        }
-        catch (Exception ex)
-        {
-            Error($"Failed to write line to log file: {ex.Message}");
-            CloseLogWriter();
-        }
-    }
-
-    private void CloseLogWriter()
-    {
-        if (logWriter == null)
-        {
-            return;
-        }
-
-        try
-        {
-            logWriter.Close();
-        }
-        catch (Exception ex)
-        {
-            Error($"Failed to close stream writer of logging file: {ex.Message}");
-        }
-        
-        logFile = null;
-        logWriter = null;
-    }
-
-    private void DeleteLoop()
-    {
-        // 2 hours
-        var m = 2 * 60 * 60 * 1000;
-        while (true)
-        {
-            DeleteOldLogFiles();
-            Thread.Sleep(m);
-        }
-    }
-
-    private void DeleteOldLogFiles()
-    {
-        var files = Libs.GetFiles(Conf.OutFileDir, @"^\d{4}-\d{2}-\d{2}\.log$");
-
-        for (int i = 0, n = files.Count - Conf.MaxLogFilesNum; i < n; i++)
-        {
-            var file = files[i];
-            try
-            {
-                file.Delete();
-            }
-            catch (Exception ex)
-            {
-                Error($"Failed to delete file `{file.FullName}`: {ex.Message}");
-                continue;
-            }
-
-            Info($"Delete file `{file.FullName}`");
-        }
     }
 }
