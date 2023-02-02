@@ -138,6 +138,7 @@ OutFileDir: outfiles
 # 停止服务时，等待程序主动退出的最大时间
 WaitSecondsForWorkerToExit: 5
 
+# 注意： MaxLogFilesNum配置已废弃（自v1.0.11）
 # 日志文件的最大个数，设为空则不限制，否则需要设置为大于等于 2 的整数
 # svc.exe 每隔两个小时检查一次日志文件个数，如果个数大于这个值，就删除最老的几个文件
 MaxLogFilesNum: 

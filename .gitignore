@@ -1,6 +1,7 @@
 *.log
 !lastline.log
 svc.log
-.vs
-/src/.vs
-/src/obj
+/.vs/
+/src/.vs/
+/src/obj/
+/src/packages/
