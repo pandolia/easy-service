@@ -1,0 +1,1 @@
+@powershell "%~dp0\install-all.ps1"
