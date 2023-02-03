@@ -186,3 +186,7 @@ NSSM 主要缺点是界面和文档都是英文的，对新手也不见得更友
 ### 典型用例
 
 Appin 网站介绍了用 EasyService 部署 frp 内网穿透服务的方法，请看 [这里](https://www.appinn.com/easyservice-for-windows/) 。
+
+### 意见反馈
+
+若对 EasyService 有任何意见或建议，可以提 ISSUE ，也可以加作者微信 dengfenglai8484 。
