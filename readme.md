@@ -189,4 +189,4 @@ Appin 网站介绍了用 EasyService 部署 frp 内网穿透服务的方法，�
 
 ### 意见反馈
 
-若对 EasyService 有任何意见或建议，可以提 ISSUE ，也可以加作者微信 dengfenglai8484 。
+若对 EasyService 有任何意见或建议，可以提 ISSUE ，也可以加作者微信 Kotlinfinity 。
