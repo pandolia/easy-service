@@ -27,6 +27,13 @@ public class Program
         {
             if (args.Length == 0)
             {
+                if (Environment.UserInteractive)
+                {
+                    Console.WriteLine(USAGE);
+                    Console.WriteLine("Press any key to exit...");
+                    Console.ReadKey(true);  // true = 不显示按键字符
+                    Environment.Exit(1);
+                }
                 SimpleService.RunService();
                 return 0;
             }
