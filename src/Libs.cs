@@ -168,6 +168,7 @@ public static class Libs
                 if (p.ExitCode != 0)
                 {
                     Console.WriteLine(p.StandardOutput.ReadToEnd());
+                    Console.WriteLine("Please try running with administrator privileges!");
                 }
                 return p.ExitCode;
             }
