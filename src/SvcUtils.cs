@@ -242,7 +242,7 @@ public static class SvcUtils
         {
             var name = sc.ServiceName;
             var mngObj = GetServiceManagementObjectByName(name);
-            var path = mngObj["PathName"].ToString();
+            var path = mngObj["PathName"]?.ToString();
             if (path != Libs.BinPath)
             {
                 continue;
