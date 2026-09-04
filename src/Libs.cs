@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Management;
 using System.Text.RegularExpressions;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 
 public delegate string FieldSetter(string value);
 
@@ -604,4 +606,70 @@ public static class Libs
     {
         return MatchRegex(input, @"\d+");
     }
+
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    static extern bool OpenProcessToken(
+        IntPtr ProcessHandle,
+        uint DesiredAccess,
+        out IntPtr TokenHandle);
+
+    [DllImport("kernel32.dll")]
+    static extern IntPtr GetCurrentProcess();
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    static extern bool GetTokenInformation(
+        IntPtr TokenHandle,
+        int TokenInformationClass,
+        out TOKEN_ELEVATION TokenInformation,
+        int TokenInformationLength,
+        out int ReturnLength);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool CloseHandle(IntPtr hObject);
+
+    const uint TOKEN_QUERY = 0x0008;
+    const int TokenElevation = 20;
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct TOKEN_ELEVATION
+    {
+        public int TokenIsElevated;
+    }
+
+    public static bool IsRunningAsAdmin()
+    {
+        if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, out IntPtr token))
+        {
+            throw new Win32Exception();
+        }
+
+        try
+        {
+            return GetTokenInformation
+            (
+                token,
+                TokenElevation,
+                out TOKEN_ELEVATION elevation,
+                Marshal.SizeOf<TOKEN_ELEVATION>(),
+                out _
+            )
+            && (elevation.TokenIsElevated != 0);
+        }
+        finally
+        {
+            CloseHandle(token);
+        }
+    }
+
+    public static void CheckRunningAsAdmin()
+    {
+        if (IsRunningAsAdmin())
+        {
+            return;
+        }
+
+        Abort("请使用管理员权限运行本程序");
+    }
+
 }

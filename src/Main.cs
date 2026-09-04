@@ -23,120 +23,115 @@ public class Program
 
     public static int Main(string[] args)
     {
-        try
+        if (args.Length == 0)
         {
-            if (args.Length == 0)
+            if (Environment.UserInteractive)
             {
-                if (Environment.UserInteractive)
-                {
-                    Console.WriteLine(USAGE);
-                    Console.WriteLine("Press any key to exit...");
-                    Console.ReadKey(true);  // true = 不显示按键字符
-                    Environment.Exit(1);
-                }
-                SimpleService.RunService();
-                return 0;
+                Console.WriteLine(USAGE);
+                Console.WriteLine("Press any key to exit...");
+                Console.ReadKey(true);  // true = 不显示按键字符
+                Environment.Exit(1);
             }
+            SimpleService.RunService();
+            return 0;
+        }
 
-            var op = args[0];
-            var opr = $"|{op}|";
-            var argc = args.Length - 1;
-            var arg1 = argc == 1 ? args[1] : null;
+        var op = args[0];
+        var opr = $"|{op}|";
+        var argc = args.Length - 1;
+        var arg1 = argc == 1 ? args[1] : null;
 
-            if (op == "ver" || op == "version" || op == "--version" || op == "-v")
-            {
-                if (argc != 0)
-                {
-                    Libs.Abort(USAGE);
-                }
+        if ("|install|stop|start|remove|restart|".Contains(opr))
+        {
+            Libs.CheckRunningAsAdmin();
+        }
 
-                Console.WriteLine(VERSION);
-                return 0;
-            }
-
-            if (op == "create")
-            {
-                if (argc != 1)
-                {
-                    Libs.Abort(USAGE);
-                }
-
-                CreateProject(arg1);
-                return 0;
-            }
-
-            if (op == "list" || op == "ls")
-            {
-                if (argc != 0)
-                {
-                    Libs.Abort(USAGE);
-                }
-
-                SvcUtils.ListAllEasyServices();
-                return 0;
-            }
-
-            var commands = "|check|status|test-worker|install|stop|start|remove|restart|log|";
-
-            if (!commands.Contains(opr) || argc > 1)
+        if (op == "ver" || op == "version" || op == "--version" || op == "-v")
+        {
+            if (argc != 0)
             {
                 Libs.Abort(USAGE);
             }
 
-            if (arg1 != null && (arg1.Contains('/') || arg1.Contains('\\')))
-            {
-                if (!Directory.Exists(arg1))
-                {
-                    Libs.Abort($"Directory \"{arg1}\" not exists");
-                }
+            Console.WriteLine(VERSION);
+            return 0;
+        }
 
-                Libs.SetCwd(arg1);
-                arg1 = null;
+        if (op == "create")
+        {
+            if (argc != 1)
+            {
+                Libs.Abort(USAGE);
             }
 
-            if (op == "test-worker")
-            {
-                if (arg1 != null && arg1 != "--popup")
-                {
-                    Libs.Abort($"Directory argument \"{arg1}\" should contain '/' or '\\'");
-                }
+            CreateProject(arg1);
+            return 0;
+        }
 
-                TestWorker(arg1 == "--popup");
-                return 0;
+        if (op == "list" || op == "ls")
+        {
+            if (argc != 0)
+            {
+                Libs.Abort(USAGE);
             }
 
-            if ("|check|status|install|".Contains(opr) && arg1 != null)
+            SvcUtils.ListAllEasyServices();
+            return 0;
+        }
+
+        var commands = "|check|status|test-worker|install|stop|start|remove|restart|log|";
+
+        if (!commands.Contains(opr) || argc > 1)
+        {
+            Libs.Abort(USAGE);
+        }
+
+        if (arg1 != null && (arg1.Contains('/') || arg1.Contains('\\')))
+        {
+            if (!Directory.Exists(arg1))
+            {
+                Libs.Abort($"Directory \"{arg1}\" not exists");
+            }
+
+            Libs.SetCwd(arg1);
+            arg1 = null;
+        }
+
+        if (op == "test-worker")
+        {
+            if (arg1 != null && arg1 != "--popup")
             {
                 Libs.Abort($"Directory argument \"{arg1}\" should contain '/' or '\\'");
             }
 
-            if ("|restart|log|".Contains(opr) && arg1 == "all")
-            {
-                Libs.Abort(USAGE);
-            }
-
-            if (arg1 == null)
-            {
-                ManageOneByConfFile(op);
-            }
-            else if (arg1 != "all")
-            {
-                ManageOneBySvrIdentity(op, arg1);
-            }
-            else
-            {
-                SvcUtils.ManageAll(op);
-            }
-
+            TestWorker(arg1 == "--popup");
             return 0;
         }
-        catch (Exception ex)  //InvalidOperationException
+
+        if ("|check|status|install|".Contains(opr) && arg1 != null)
         {
-            Console.WriteLine();
-            Console.Error.WriteLine($"[ERROR] {ex.Message}");
-            Console.WriteLine("Please try running with administrator privileges!");
-            return 1;  // 非零退出码表示失败
+            Libs.Abort($"Directory argument \"{arg1}\" should contain '/' or '\\'");
         }
+
+        if ("|restart|log|".Contains(opr) && arg1 == "all")
+        {
+            Libs.Abort(USAGE);
+        }
+
+        if (arg1 == null)
+        {
+            ManageOneByConfFile(op);
+        }
+        else if (arg1 != "all")
+        {
+            ManageOneBySvrIdentity(op, arg1);
+        }
+        else
+        {
+            SvcUtils.ManageAll(op);
+        }
+
+        return 0;
     }
 
     private static void ManageOneByConfFile(string op)
